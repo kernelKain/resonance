@@ -1,0 +1,19 @@
+review_text,rating,date,author
+"The product is fine, I guess. It works.",4,2026-03-12,maya.k
+"Absolutely love the keyboard-first workflow. Best purchase this year.",5,2026-03-18,jon.r
+"It's not bad but I probably won't renew. Switching costs are the only reason I'm still here.",4,2026-04-02,priya.s
+"Great app, though I wish it did more for people who have been around for years.",4,2026-04-09,liam.o
+"I keep recommending Linear even though the issues around cycles have been sitting in my craw for months.",4,2026-04-14,nina.v
+"Outage last Tuesday scared the team. We cannot ship if the issue tracker disappears.",2,2026-04-16,theo.b
+"The design is so good it feels like the tool respects us. Rare.",5,2026-04-20,aisha.m
+"Support answered in 11 minutes. I felt like a person, not a ticket.",5,2026-04-22,chris.p
+"Fine. Whatever. It does the job.",3,2026-04-25,anon-17
+"We moved from Jira and the first month felt like coming up for air. Then the roadmap froze and so did we.",4,2026-05-01,elena.d
+"I love it but my VP is asking why we pay per seat for something the intern could replace with a spreadsheet.",4,2026-05-03,marcus.w
+"Notifications are a firehose. I muted everything and now I miss the one bug that matters.",2,2026-05-07,sofia.h
+"Would be 5 stars if power users had a way to be recognized — saved views, badges, something. We've been here 3 years.",4,2026-05-11,ravi.n
+"Onboarding was lonely. Docs are beautiful and I still had nobody to ask a dumb question.",3,2026-05-14,jade.l
+"When it is fast, it is a joy. When search stalls, I feel abandoned in my own backlog.",3,2026-05-18,owen.c
+"Not bad.",3,2026-05-20,k.tran
+"I will probably churn at renewal. The product is genuinely good. Those two facts are both true.",4,2026-05-22,harper.j
+"Cycles, git automations, and the command menu still make me feel like I can do my job. Please don't mess this up.",5,2026-05-24,diego.a

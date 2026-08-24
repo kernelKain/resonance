@@ -1,0 +1,42 @@
+{
+  "name": "resonance",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -H 0.0.0.0 -p 43123",
+    "mcp": "node mcp/filesystem/server.mjs",
+    "day1": "concurrently -k -n web,mcp -c cyan,magenta \"npm run dev\" \"npm run mcp\"",
+    "harness": "npx --yes @truefoundry/trueforge@latest",
+    "bootstrap": "node scripts/bootstrap.mjs",
+    "build": "next build",
+    "start": "next start -H 0.0.0.0 -p 43123",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.7.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "concurrently": "^10.0.5",
+    "express": "^5.2.1",
+    "lucide-react": "^1.34.0",
+    "next": "16.3.2",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "shadcn": "^4.19.0",
+    "tailwind-merge": "^3.6.0",
+    "tw-animate-css": "^1.4.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/express": "^5.0.6",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.2",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

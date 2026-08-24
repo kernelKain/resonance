@@ -1,0 +1,29 @@
+name: Qodo PR Agent
+
+# Fallback if the Qodo GitHub App is not commenting.
+# This workflow needs OPENAI_KEY (or a Qodo key) in repo secrets to actually review.
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  pr_agent:
+    if: github.event.pull_request || contains(github.event.comment.body, '/review') || contains(github.event.comment.body, '/improve') || contains(github.event.comment.body, '/describe')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Qodo PR Agent
+        uses: qodo-ai/pr-agent@main
+        env:
+          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          github_action_config.auto_review: "true"
+          github_action_config.auto_describe: "true"
+          github_action_config.auto_improve: "true"
