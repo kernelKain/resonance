@@ -86,6 +86,60 @@ async function upsertModelProvider() {
   console.log("• Model provider google-gemini configured.");
 }
 
+async function upsertSandboxProvider() {
+  const response = await fetch(
+    `${TRUEFORGE}/api/v1/settings/sandbox-providers`,
+    { headers: { accept: "application/json" } },
+  );
+
+  if (response.ok) {
+    const existing = await response.json();
+    const status = existing.data?.status ?? "unknown";
+
+    if (status === "ready") {
+      console.log("• Existing Daytona sandbox provider is ready.");
+      return;
+    }
+
+    throw new Error(
+      `Existing Daytona sandbox provider is not ready: status=${status}, reason=${existing.data?.status_reason ?? "unknown"}`,
+    );
+  }
+
+  if (response.status !== 404) {
+    throw new Error(
+      `Could not inspect sandbox provider: ${response.status} ${await response.text()}`,
+    );
+  }
+
+  const apiKey = process.env.DAYTONA_API_KEY;
+  if (!apiKey) {
+    throw new Error(
+      "No sandbox provider exists and DAYTONA_API_KEY is missing from .env.local.",
+    );
+  }
+
+  const execTimeout = Number(
+    process.env.TRUEFORGE_SANDBOX_EXEC_TIMEOUT_MS ?? 300000,
+  );
+
+  await tf("/api/v1/settings/sandbox-providers", {
+    method: "PUT",
+    body: JSON.stringify({
+      manifest: {
+        type: "daytona",
+        auth: { api_key: apiKey },
+        exec_timeout_ms: execTimeout,
+        auto_stop_interval_in_minutes: 5,
+        auto_archive_interval_in_minutes: 60,
+        auto_delete_interval_in_minutes: 7200,
+      },
+    }),
+  });
+
+  console.log("• Daytona sandbox provider created.");
+}
+
 async function upsertMcp(manifest) {
   await tf("/api/v1/settings/mcp-servers", {
     method: "PUT",
@@ -96,6 +150,9 @@ async function upsertMcp(manifest) {
 
 async function upsertAgent() {
   const specPath = path.join(ROOT, "agent.json");
+  if (!fs.existsSync(specPath)) {
+    throw new Error("Missing agent.json in repo root. Create it before bootstrap.");
+  }
   const spec = JSON.parse(fs.readFileSync(specPath, "utf8"));
   spec.model = spec.model ?? {};
   spec.model.name = MODEL_FQN;
@@ -136,12 +193,13 @@ async function main() {
   }
 
   await upsertModelProvider();
+  await upsertSandboxProvider();
   await upsertMcp({
     type: "remote",
     name: "filesystem",
     url: MCP_URL,
     description:
-      "Read uploaded customer review CSVs from the Resonance shared volume (uploads/, analysis/, demo_data/).",
+      "Read uploaded customer review CSVs and analysis JSON from the Resonance shared volume (uploads/, analysis/, demo_data/, scripts/).",
   });
   await upsertMcp({
     type: "remote",
