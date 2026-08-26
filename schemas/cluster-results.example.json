@@ -1,0 +1,38 @@
+{
+  "type": "cluster_results",
+  "algorithm": "kmeans",
+  "feature_order": [
+    "joy",
+    "trust",
+    "fear",
+    "surprise",
+    "sadness",
+    "disgust",
+    "anger",
+    "anticipation"
+  ],
+  "num_clusters": 3,
+  "silhouette_score": 0.42,
+  "k_candidates": { "3": 0.42, "4": 0.31, "5": 0.28 },
+  "random_state": 42,
+  "total_reviews": 3,
+  "clusters": [
+    {
+      "id": 0,
+      "size": 1,
+      "centroid": {
+        "joy": 0.1,
+        "trust": 0.2,
+        "fear": 0.0,
+        "surprise": 0.0,
+        "sadness": 0.45,
+        "disgust": 0.05,
+        "anger": 0.05,
+        "anticipation": 0.1
+      },
+      "member_ids": [1],
+      "representative_review_ids": [1]
+    }
+  ],
+  "assignments": [{ "id": 1, "cluster_id": 0 }]
+}

@@ -48,3 +48,11 @@ CLAUDE.md
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# python (Day 3 clustering)
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.python-version
+agent.day1.json.bak
