@@ -1,0 +1,76 @@
+{
+  "type": "analysis_result",
+  "product_name": "Linear",
+  "product_context": "Linear is a project-management tracker for software teams.",
+  "total_reviews": 1,
+  "timestamp": "2026-08-26T22:00:00Z",
+  "emotion_summary": {
+    "dominant_emotion": "sadness",
+    "average_scores": {
+      "joy": 0.1,
+      "trust": 0.2,
+      "fear": 0.0,
+      "surprise": 0.0,
+      "sadness": 0.45,
+      "disgust": 0.05,
+      "anger": 0.05,
+      "anticipation": 0.1
+    }
+  },
+  "maslow_distribution": {
+    "safety": 0,
+    "belonging": 0,
+    "esteem": 1,
+    "self_actualization": 0
+  },
+  "dissonance_stats": {
+    "count": 1,
+    "percentage": 100.0,
+    "flagged_review_ids": [1]
+  },
+  "archetypes": [
+    {
+      "cluster_id": 0,
+      "name": "Resigned Satisfied",
+      "profile": "Customers describe the product as fine while sadness leads the emotion profile. They stay because switching costs more than the disappointment.",
+      "dominant_emotions": ["sadness", "trust", "joy"],
+      "dominant_maslow_need": "esteem",
+      "representative_quotes": [
+        "The product is fine, I guess. It works."
+      ],
+      "size": 1,
+      "percentage": 100.0
+    }
+  ],
+  "hidden_asks": [
+    {
+      "id": 1,
+      "title": "Acknowledgement of quiet loyalty",
+      "description": "The Resigned Satisfied archetype praises the product in understatement while scoring high on sadness. No review asks for a loyalty program, but the pattern implies they want their tenure to count for something.",
+      "evidence_archetype": "Resigned Satisfied",
+      "maslow_need": "esteem",
+      "confidence": "high",
+      "action_items": null
+    },
+    {
+      "id": 2,
+      "title": "A place to ask naive questions",
+      "description": "Isolation language sits next to compliments on docs. The unmet need is belonging during onboarding, not another tutorial page.",
+      "evidence_archetype": "Resigned Satisfied",
+      "maslow_need": "belonging",
+      "confidence": "medium",
+      "action_items": null
+    },
+    {
+      "id": 3,
+      "title": "Recoverability they can trust",
+      "description": "Fear-led reviews organize nightly exports around history loss. They call the product good and still do not trust recovery.",
+      "evidence_archetype": "Resigned Satisfied",
+      "maslow_need": "safety",
+      "confidence": "high",
+      "action_items": null
+    }
+  ],
+  "scored_reviews": [],
+  "cluster_results": {}
+}

@@ -1,0 +1,338 @@
+{
+  "type": "scored_reviews",
+  "product_name": "Linear",
+  "product_context": "Linear is a project-management tracker for software teams, in the same category as Jira and Asana. Public complaints cluster around cycles, notifications, and seat price. Competitors include Jira and Height.",
+  "total_reviews": 15,
+  "reviews": [
+    {
+      "id": 1,
+      "text": "The product is fine, I guess. It works.",
+      "rating": 4,
+      "plutchik": {
+        "joy": 0.10,
+        "trust": 0.20,
+        "fear": 0.04,
+        "surprise": 0.02,
+        "sadness": 0.45,
+        "disgust": 0.05,
+        "anger": 0.05,
+        "anticipation": 0.10
+      },
+      "dissonance": {
+        "detected": true,
+        "type": "positive_words_negative_emotions",
+        "explanation": "Affirming language with dominant sadness."
+      },
+      "maslow_need": "esteem",
+      "emotion_summary": "Resignation masked as satisfaction"
+    },
+    {
+      "id": 2,
+      "text": "Absolutely love the keyboard-first workflow. Best purchase this year.",
+      "rating": 5,
+      "plutchik": {
+        "joy": 0.86,
+        "trust": 0.78,
+        "fear": 0.01,
+        "surprise": 0.28,
+        "sadness": 0.02,
+        "disgust": 0.01,
+        "anger": 0.01,
+        "anticipation": 0.42
+      },
+      "dissonance": {
+        "detected": false,
+        "type": "none",
+        "explanation": "Literal tone and emotional profile agree."
+      },
+      "maslow_need": "self_actualization",
+      "emotion_summary": "Unconflicted delight"
+    },
+    {
+      "id": 3,
+      "text": "I love it but I probably won't renew.",
+      "rating": 4,
+      "plutchik": {
+        "joy": 0.18,
+        "trust": 0.28,
+        "fear": 0.08,
+        "surprise": 0.06,
+        "sadness": 0.52,
+        "disgust": 0.06,
+        "anger": 0.16,
+        "anticipation": 0.22
+      },
+      "dissonance": {
+        "detected": true,
+        "type": "mixed_signals",
+        "explanation": "Love plus an exit threat in one sentence."
+      },
+      "maslow_need": "esteem",
+      "emotion_summary": "Attachment with planned exit"
+    },
+    {
+      "id": 4,
+      "text": "Great app, though I wish it did more.",
+      "rating": 4,
+      "plutchik": {
+        "joy": 0.72,
+        "trust": 0.64,
+        "fear": 0.02,
+        "surprise": 0.18,
+        "sadness": 0.08,
+        "disgust": 0.02,
+        "anger": 0.04,
+        "anticipation": 0.58
+      },
+      "dissonance": {
+        "detected": true,
+        "type": "mixed_signals",
+        "explanation": "Praise plus a growth wish."
+      },
+      "maslow_need": "self_actualization",
+      "emotion_summary": "Joy with an unfinished-product ache"
+    },
+    {
+      "id": 5,
+      "text": "Outage last Tuesday scared the team. We cannot ship if the issue tracker disappears.",
+      "rating": 2,
+      "plutchik": {
+        "joy": 0.04,
+        "trust": 0.12,
+        "fear": 0.78,
+        "surprise": 0.22,
+        "sadness": 0.34,
+        "disgust": 0.10,
+        "anger": 0.36,
+        "anticipation": 0.08
+      },
+      "dissonance": {
+        "detected": false,
+        "type": "none",
+        "explanation": "Fear language matches a fear-led profile."
+      },
+      "maslow_need": "safety",
+      "emotion_summary": "Operational fear after an outage"
+    },
+    {
+      "id": 6,
+      "text": "The design is so good it feels like the tool respects us. Rare.",
+      "rating": 5,
+      "plutchik": {
+        "joy": 0.80,
+        "trust": 0.82,
+        "fear": 0.01,
+        "surprise": 0.30,
+        "sadness": 0.03,
+        "disgust": 0.01,
+        "anger": 0.02,
+        "anticipation": 0.36
+      },
+      "dissonance": {
+        "detected": false,
+        "type": "none",
+        "explanation": "Literal tone and emotional profile agree."
+      },
+      "maslow_need": "esteem",
+      "emotion_summary": "Felt respect"
+    },
+    {
+      "id": 7,
+      "text": "Fine. Whatever. It does the job.",
+      "rating": 3,
+      "plutchik": {
+        "joy": 0.08,
+        "trust": 0.18,
+        "fear": 0.03,
+        "surprise": 0.02,
+        "sadness": 0.50,
+        "disgust": 0.12,
+        "anger": 0.10,
+        "anticipation": 0.06
+      },
+      "dissonance": {
+        "detected": true,
+        "type": "positive_words_negative_emotions",
+        "explanation": "Dismissive politeness over flat affect."
+      },
+      "maslow_need": "esteem",
+      "emotion_summary": "Checked-out compliance"
+    },
+    {
+      "id": 8,
+      "text": "Would be 5 stars if power users had a way to be recognized. We've been here 3 years.",
+      "rating": 4,
+      "plutchik": {
+        "joy": 0.14,
+        "trust": 0.32,
+        "fear": 0.05,
+        "surprise": 0.04,
+        "sadness": 0.40,
+        "disgust": 0.08,
+        "anger": 0.28,
+        "anticipation": 0.14
+      },
+      "dissonance": {
+        "detected": true,
+        "type": "mixed_signals",
+        "explanation": "Loyalty tenure against withheld stars."
+      },
+      "maslow_need": "esteem",
+      "emotion_summary": "Loyalist who feels unseen"
+    },
+    {
+      "id": 9,
+      "text": "Onboarding was lonely. Docs are beautiful and I still had nobody to ask a dumb question.",
+      "rating": 3,
+      "plutchik": {
+        "joy": 0.12,
+        "trust": 0.22,
+        "fear": 0.48,
+        "surprise": 0.10,
+        "sadness": 0.36,
+        "disgust": 0.08,
+        "anger": 0.18,
+        "anticipation": 0.10
+      },
+      "dissonance": {
+        "detected": true,
+        "type": "mixed_signals",
+        "explanation": "Compliment on docs next to isolation."
+      },
+      "maslow_need": "belonging",
+      "emotion_summary": "Isolation during onboarding"
+    },
+    {
+      "id": 10,
+      "text": "It's not bad.",
+      "rating": 3,
+      "plutchik": {
+        "joy": 0.06,
+        "trust": 0.16,
+        "fear": 0.02,
+        "surprise": 0.01,
+        "sadness": 0.44,
+        "disgust": 0.06,
+        "anger": 0.04,
+        "anticipation": 0.05
+      },
+      "dissonance": {
+        "detected": true,
+        "type": "positive_words_negative_emotions",
+        "explanation": "Litotes covering low joy."
+      },
+      "maslow_need": "esteem",
+      "emotion_summary": "Understatement as disappointment"
+    },
+    {
+      "id": 11,
+      "text": "I will probably churn at renewal. The product is genuinely good. Those two facts are both true.",
+      "rating": 4,
+      "plutchik": {
+        "joy": 0.16,
+        "trust": 0.30,
+        "fear": 0.10,
+        "surprise": 0.08,
+        "sadness": 0.48,
+        "disgust": 0.07,
+        "anger": 0.14,
+        "anticipation": 0.24
+      },
+      "dissonance": {
+        "detected": true,
+        "type": "mixed_signals",
+        "explanation": "Explicit dual-truth: good product, leaving anyway."
+      },
+      "maslow_need": "esteem",
+      "emotion_summary": "Clear-eyed pre-churn"
+    },
+    {
+      "id": 12,
+      "text": "Cycles, git automations, and the command menu still make me feel like I can do my job.",
+      "rating": 5,
+      "plutchik": {
+        "joy": 0.76,
+        "trust": 0.74,
+        "fear": 0.02,
+        "surprise": 0.16,
+        "sadness": 0.04,
+        "disgust": 0.01,
+        "anger": 0.02,
+        "anticipation": 0.48
+      },
+      "dissonance": {
+        "detected": false,
+        "type": "none",
+        "explanation": "Literal tone and emotional profile agree."
+      },
+      "maslow_need": "self_actualization",
+      "emotion_summary": "Mastery joy"
+    },
+    {
+      "id": 13,
+      "text": "I keep recommending Linear even though support has stopped listening to long-time customers.",
+      "rating": 4,
+      "plutchik": {
+        "joy": 0.10,
+        "trust": 0.24,
+        "fear": 0.42,
+        "surprise": 0.08,
+        "sadness": 0.30,
+        "disgust": 0.22,
+        "anger": 0.46,
+        "anticipation": 0.08
+      },
+      "dissonance": {
+        "detected": true,
+        "type": "mixed_signals",
+        "explanation": "Advocacy plus a charge that support stopped listening."
+      },
+      "maslow_need": "esteem",
+      "emotion_summary": "Advocate who feels abandoned"
+    },
+    {
+      "id": 14,
+      "text": "Notifications are a firehose. I muted everything and now I miss the one bug that matters.",
+      "rating": 2,
+      "plutchik": {
+        "joy": 0.06,
+        "trust": 0.14,
+        "fear": 0.58,
+        "surprise": 0.16,
+        "sadness": 0.28,
+        "disgust": 0.24,
+        "anger": 0.40,
+        "anticipation": 0.12
+      },
+      "dissonance": {
+        "detected": false,
+        "type": "none",
+        "explanation": "Complaint language matches anger and fear."
+      },
+      "maslow_need": "safety",
+      "emotion_summary": "Alerting that creates missed-risk fear"
+    },
+    {
+      "id": 15,
+      "text": "Fear of losing history is the only reason we export nightly. The product is good. The recovery story is not.",
+      "rating": 3,
+      "plutchik": {
+        "joy": 0.08,
+        "trust": 0.18,
+        "fear": 0.72,
+        "surprise": 0.10,
+        "sadness": 0.26,
+        "disgust": 0.12,
+        "anger": 0.22,
+        "anticipation": 0.10
+      },
+      "dissonance": {
+        "detected": true,
+        "type": "mixed_signals",
+        "explanation": "Calls the product good while organizing around data-loss fear."
+      },
+      "maslow_need": "safety",
+      "emotion_summary": "Reliability fear driving nightly exports"
+    }
+  ]
+}

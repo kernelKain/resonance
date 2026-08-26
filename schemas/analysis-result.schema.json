@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Resonance analysis_result payload",
+  "type": "object",
+  "required": [
+    "type",
+    "product_name",
+    "product_context",
+    "total_reviews",
+    "emotion_summary",
+    "maslow_distribution",
+    "dissonance_stats",
+    "archetypes",
+    "hidden_asks"
+  ],
+  "properties": {
+    "type": { "const": "analysis_result" },
+    "product_name": { "type": "string", "minLength": 1 },
+    "product_context": { "type": "string", "minLength": 1 },
+    "total_reviews": { "type": "integer", "minimum": 1 },
+    "timestamp": { "type": "string" },
+    "emotion_summary": {
+      "type": "object",
+      "required": ["dominant_emotion", "average_scores"],
+      "properties": {
+        "dominant_emotion": {
+          "enum": [
+            "joy",
+            "trust",
+            "fear",
+            "surprise",
+            "sadness",
+            "disgust",
+            "anger",
+            "anticipation"
+          ]
+        },
+        "average_scores": { "type": "object" }
+      }
+    },
+    "maslow_distribution": {
+      "type": "object",
+      "required": ["safety", "belonging", "esteem", "self_actualization"],
+      "properties": {
+        "safety": { "type": "integer", "minimum": 0 },
+        "belonging": { "type": "integer", "minimum": 0 },
+        "esteem": { "type": "integer", "minimum": 0 },
+        "self_actualization": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "dissonance_stats": {
+      "type": "object",
+      "required": ["count", "percentage", "flagged_review_ids"],
+      "properties": {
+        "count": { "type": "integer", "minimum": 0 },
+        "percentage": { "type": "number" },
+        "flagged_review_ids": {
+          "type": "array",
+          "items": { "type": "integer" }
+        }
+      }
+    },
+    "archetypes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "cluster_id",
+          "name",
+          "profile",
+          "dominant_emotions",
+          "dominant_maslow_need",
+          "representative_quotes",
+          "size",
+          "percentage"
+        ],
+        "properties": {
+          "cluster_id": { "type": "integer", "minimum": 0 },
+          "name": { "type": "string", "minLength": 3 },
+          "profile": { "type": "string", "minLength": 20 },
+          "dominant_emotions": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": { "type": "string" }
+          },
+          "dominant_maslow_need": {
+            "enum": ["safety", "belonging", "esteem", "self_actualization"]
+          },
+          "representative_quotes": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "size": { "type": "integer", "minimum": 1 },
+          "percentage": { "type": "number" }
+        }
+      }
+    },
+    "hidden_asks": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "description",
+          "evidence_archetype",
+          "maslow_need",
+          "confidence",
+          "action_items"
+        ],
+        "properties": {
+          "id": { "type": "integer", "minimum": 1 },
+          "title": { "type": "string", "minLength": 3 },
+          "description": { "type": "string", "minLength": 20 },
+          "evidence_archetype": { "type": "string", "minLength": 3 },
+          "maslow_need": {
+            "enum": ["safety", "belonging", "esteem", "self_actualization"]
+          },
+          "confidence": { "enum": ["high", "medium", "low"] },
+          "action_items": { "type": "null" }
+        }
+      }
+    },
+    "scored_reviews": { "type": "array" },
+    "cluster_results": { "type": "object" }
+  }
+}
