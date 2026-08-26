@@ -1,0 +1,25 @@
+{
+  "product_name_contains": "Linear",
+  "total_reviews": 15,
+  "must_flag_dissonance": [
+    "The product is fine, I guess. It works.",
+    "I love it but I probably won't renew.",
+    "Great app, though I wish it did more.",
+    "Fine. Whatever. It does the job.",
+    "It's not bad.",
+    "I will probably churn at renewal. The product is genuinely good. Those two facts are both true.",
+    "I keep recommending Linear even though support has stopped listening to long-time customers."
+  ],
+  "must_not_flag_dissonance": [
+    "Absolutely love the keyboard-first workflow. Best purchase this year.",
+    "The design is so good it feels like the tool respects us. Rare.",
+    "Cycles, git automations, and the command menu still make me feel like I can do my job."
+  ],
+  "must_maslow": {
+    "Outage last Tuesday scared the team. We cannot ship if the issue tracker disappears.": "safety",
+    "Onboarding was lonely. Docs are beautiful and I still had nobody to ask a dumb question.": "belonging",
+    "Would be 5 stars if power users had a way to be recognized. We've been here 3 years.": "esteem",
+    "Great app, though I wish it did more.": "self_actualization",
+    "Fear of losing history is the only reason we export nightly. The product is good. The recovery story is not.": "safety"
+  }
+}

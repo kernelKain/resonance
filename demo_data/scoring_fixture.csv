@@ -1,0 +1,16 @@
+review_text,rating,date,author
+"The product is fine, I guess. It works.",4,2026-03-12,maya.k
+"Absolutely love the keyboard-first workflow. Best purchase this year.",5,2026-03-18,jon.r
+"I love it but I probably won't renew.",4,2026-04-02,priya.s
+"Great app, though I wish it did more.",4,2026-04-09,liam.o
+"Outage last Tuesday scared the team. We cannot ship if the issue tracker disappears.",2,2026-04-16,theo.b
+"The design is so good it feels like the tool respects us. Rare.",5,2026-04-20,aisha.m
+"Fine. Whatever. It does the job.",3,2026-04-25,anon-17
+"Would be 5 stars if power users had a way to be recognized. We've been here 3 years.",4,2026-05-11,ravi.n
+"Onboarding was lonely. Docs are beautiful and I still had nobody to ask a dumb question.",3,2026-05-14,jade.l
+"It's not bad.",3,2026-05-20,k.tran
+"I will probably churn at renewal. The product is genuinely good. Those two facts are both true.",4,2026-05-22,harper.j
+"Cycles, git automations, and the command menu still make me feel like I can do my job.",5,2026-05-24,diego.a
+"I keep recommending Linear even though support has stopped listening to long-time customers.",4,2026-04-14,nina.v
+"Notifications are a firehose. I muted everything and now I miss the one bug that matters.",2,2026-05-07,sofia.h
+"Fear of losing history is the only reason we export nightly. The product is good. The recovery story is not.",3,2026-06-09,tom.k

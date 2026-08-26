@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Resonance scored_reviews payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["type", "product_name", "product_context", "total_reviews", "reviews"],
+  "properties": {
+    "type": { "const": "scored_reviews" },
+    "product_name": { "type": "string", "minLength": 1 },
+    "product_context": { "type": "string", "minLength": 1 },
+    "total_reviews": { "type": "integer", "minimum": 0 },
+    "reviews": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "text", "rating", "plutchik", "dissonance", "maslow_need", "emotion_summary"],
+        "properties": {
+          "id": { "type": "integer", "minimum": 1 },
+          "text": { "type": "string", "minLength": 1 },
+          "rating": { "type": ["number", "null"] },
+          "plutchik": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["joy", "trust", "fear", "surprise", "sadness", "disgust", "anger", "anticipation"],
+            "properties": {
+              "joy": { "type": "number", "minimum": 0, "maximum": 1 },
+              "trust": { "type": "number", "minimum": 0, "maximum": 1 },
+              "fear": { "type": "number", "minimum": 0, "maximum": 1 },
+              "surprise": { "type": "number", "minimum": 0, "maximum": 1 },
+              "sadness": { "type": "number", "minimum": 0, "maximum": 1 },
+              "disgust": { "type": "number", "minimum": 0, "maximum": 1 },
+              "anger": { "type": "number", "minimum": 0, "maximum": 1 },
+              "anticipation": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          },
+          "dissonance": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["detected", "type", "explanation"],
+            "properties": {
+              "detected": { "type": "boolean" },
+              "type": {
+                "enum": [
+                  "positive_words_negative_emotions",
+                  "negative_words_positive_emotions",
+                  "mixed_signals",
+                  "none"
+                ]
+              },
+              "explanation": { "type": "string", "minLength": 1 }
+            }
+          },
+          "maslow_need": {
+            "enum": ["safety", "belonging", "esteem", "self_actualization"]
+          },
+          "emotion_summary": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}
