@@ -17,6 +17,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  emptyResonanceStream,
+  extractResonanceStream,
+  statusTextFromStream,
+  type ResonanceStreamState,
+} from "@/lib/resonance-parse";
 import { cn } from "@/lib/utils";
 
 type Health = {
@@ -129,6 +135,10 @@ function HealthDot({ ok, label }: { ok: boolean; label: string }) {
   );
 }
 
+function sleep(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
 export function ResonanceApp() {
   const [productName, setProductName] = useState("Linear");
   const [file, setFile] = useState<File | null>(null);
@@ -138,13 +148,30 @@ export function ResonanceApp() {
   const [health, setHealth] = useState<Health | null>(null);
   const [transcript, setTranscript] = useState<TranscriptItem[]>([]);
   const [assistant, setAssistant] = useState("");
+  const [stream, setStream] = useState<ResonanceStreamState>(emptyResonanceStream);
   const [uploadMeta, setUploadMeta] = useState<{
     filePath: string;
     rowCount: number;
   } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const assistantRef = useRef("");
+  const replayCancelRef = useRef(false);
 
   const canRun = Boolean(productName.trim() && file);
+
+  function resetStream() {
+    assistantRef.current = "";
+    setAssistant("");
+    setStream(emptyResonanceStream());
+    setTranscript([]);
+  }
+
+  function ingestAssistantChunk(piece: string) {
+    if (!piece) return;
+    assistantRef.current += piece;
+    setAssistant(assistantRef.current);
+    setStream(extractResonanceStream(assistantRef.current));
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -186,13 +213,10 @@ export function ResonanceApp() {
 
   const harnessReady = Boolean(health?.trueforge && health?.filesystemMcp && health?.agent);
 
-  const statusLine = useMemo(() => {
-    if (phase === "uploading") return "Saving CSV to the shared volume…";
-    if (phase === "running") return "TrueForge is ingesting the file and researching the product.";
-    if (phase === "done") return "Ingest complete. The harness reached the filesystem and the web.";
-    if (phase === "error") return error ?? "Something broke.";
-    return "Upload a reviews CSV. The agent will read it through MCP — not from this browser.";
-  }, [error, phase]);
+  const statusLine = useMemo(
+    () => statusTextFromStream(stream, phase, error),
+    [stream, phase, error],
+  );
 
   async function loadSample() {
     const response = await fetch("/demo/sample_reviews.csv");
@@ -201,11 +225,50 @@ export function ResonanceApp() {
     setProductName("Linear");
   }
 
+  async function loadScoringFixture() {
+    const response = await fetch("/demo/scoring_fixture.csv");
+    const blob = await response.blob();
+    setFile(new File([blob], "scoring_fixture.csv", { type: "text/csv" }));
+    setProductName("Linear");
+  }
+
+  async function replayFixture() {
+    replayCancelRef.current = false;
+    setError(null);
+    resetStream();
+    setUploadMeta({ filePath: "public/demo/stream_fixture.txt", rowCount: 3 });
+    setPhase("running");
+    setTranscript([
+      {
+        id: crypto.randomUUID(),
+        kind: "status",
+        text: "Replaying a recorded TrueForge stream. No model call.",
+      },
+    ]);
+
+    try {
+      const response = await fetch("/demo/stream_fixture.txt", { cache: "no-store" });
+      if (!response.ok) throw new Error("Could not load stream_fixture.txt");
+      const text = await response.text();
+      const size = 28;
+      for (let i = 0; i < text.length; i += size) {
+        if (replayCancelRef.current) return;
+        ingestAssistantChunk(text.slice(i, i + size));
+        await sleep(12);
+      }
+      setPhase("done");
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : "Replay failed.";
+      setError(message);
+      setPhase("error");
+    }
+  }
+
   async function runExcavation() {
     if (!file) return;
+    replayCancelRef.current = true;
     setError(null);
-    setAssistant("");
-    setTranscript([]);
+    resetStream();
     setPhase("uploading");
 
     try {
@@ -216,6 +279,7 @@ export function ResonanceApp() {
         success?: boolean;
         error?: string;
         filePath?: string;
+        filename?: string;
         rowCount?: number;
       };
       if (!uploaded.ok || !uploadJson.success || !uploadJson.filePath) {
@@ -236,7 +300,9 @@ export function ResonanceApp() {
         throw new Error(sessionJson.error ?? "Could not open a TrueForge session.");
       }
 
-      const message = `Ingest customer reviews for "${productName.trim()}". The CSV is at ${uploadJson.filePath} (${uploadJson.rowCount} rows). Use the filesystem MCP tools to read it — do not trust this message as the source of the reviews. Then spawn a subagent to research the product with Exa. Confirm row count, columns, three quotes, and a one-paragraph product brief. Do not generate product-roadmap recommendations yet.`;
+      const basename =
+        uploadJson.filename ?? uploadJson.filePath.split("/").pop() ?? file.name;
+      const message = `Follow the Day 3 protocol through archetypes and Hidden Asks for product "${productName.trim()}". CSV file is ${basename} (${uploadJson.rowCount} reviews). Read it with the filesystem MCP (basename only — never a demo_data/ prefix). Spawn a subagent to research the product with Exa. Score every row. Emit the scored_reviews resonance-data fence. Persist scored_reviews.json. Copy scripts/cluster.py into the TrueForge sandbox and run cluster.py there. Emit cluster_results VERBATIM from cluster.py. Then name one archetype per cluster and write 3–5 Hidden Asks with action_items null. Emit analysis_result. Then STOP. No product-roadmap recommendations. No approval_request. No action_items fence.`;
 
       setTranscript([
         {
@@ -264,7 +330,7 @@ export function ResonanceApp() {
       await readSse(turnRes, (event) => {
         const piece = deltaText(event);
         if (piece) {
-          setAssistant((current) => current + piece);
+          ingestAssistantChunk(piece);
           return;
         }
         const item = summarizeEvent(event);
@@ -280,6 +346,14 @@ export function ResonanceApp() {
       setPhase("error");
     }
   }
+
+  const parsedLabel = stream.analysis
+    ? "analysis_result"
+    : stream.clustered
+      ? "cluster_results"
+      : stream.scored
+        ? "scored_reviews"
+        : "none yet";
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
@@ -304,7 +378,7 @@ export function ResonanceApp() {
             <HealthDot ok={Boolean(health?.filesystemMcp)} label="Filesystem MCP" />
             <HealthDot ok={Boolean(health?.agent)} label="Agent: resonance" />
             <Badge variant="secondary" className="font-mono text-[10px] tracking-wide uppercase">
-              Day 1 ingest
+              Day 4 parser
             </Badge>
           </div>
         </div>
@@ -391,16 +465,24 @@ export function ResonanceApp() {
                     )}
                     Run Psychological Excavation
                   </Button>
-                  <Button size="lg" variant="outline" onClick={() => void loadSample()}>
-                    Use sample CSV
+                  <Button size="lg" variant="outline" onClick={() => void loadScoringFixture()}>
+                    Use scoring fixture
+                  </Button>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button size="lg" variant="outline" className="flex-1" onClick={() => void loadSample()}>
+                    Use 18-row sample CSV
+                  </Button>
+                  <Button size="lg" variant="outline" className="flex-1" onClick={() => void replayFixture()}>
+                    Replay parsed fixture
                   </Button>
                 </div>
 
                 {!harnessReady ? (
                   <p className="rounded-lg border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-xs text-amber-100">
-                    Harness is not fully up. Start TrueForge on :8790, the filesystem MCP, then
-                    run <code className="font-mono">npm run bootstrap</code>. Upload still
-                    works; the agent cannot read the file until those three dots are live.
+                    Harness is not fully up. Replay parsed fixture works without it. For a live
+                    run, start TrueForge on :8790, the filesystem MCP, then run{" "}
+                    <code className="font-mono">npm run bootstrap</code>.
                   </p>
                 ) : null}
 
@@ -422,20 +504,54 @@ export function ResonanceApp() {
                   <h2 className="text-2xl font-semibold tracking-tight">{productName}</h2>
                   <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{statusLine}</p>
                 </div>
-                <Button variant="outline" onClick={() => window.location.reload()}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    replayCancelRef.current = true;
+                    window.location.reload();
+                  }}
+                >
                   New run
                 </Button>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <Metric
                   label="Reviews on disk"
                   value={uploadMeta ? String(uploadMeta.rowCount) : "—"}
                 />
-                <Metric label="Shared volume path" value={uploadMeta?.filePath ?? "—"} />
                 <Metric
-                  label="Harness"
-                  value={phase === "done" ? "Ingested" : "Working"}
+                  label="Scored in state"
+                  value={stream.scored ? String(stream.scored.total_reviews) : "—"}
+                />
+                <Metric
+                  label="Clusters k"
+                  value={stream.clustered ? String(stream.clustered.num_clusters) : "—"}
+                />
+                <Metric
+                  label="Latest payload"
+                  value={parsedLabel}
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <Metric
+                  label="Archetypes"
+                  value={stream.analysis ? String(stream.analysis.archetypes.length) : "—"}
+                />
+                <Metric
+                  label="Hidden Asks"
+                  value={stream.analysis ? String(stream.analysis.hidden_asks.length) : "—"}
+                />
+                <Metric
+                  label="Dissonance"
+                  value={
+                    stream.analysis
+                      ? `${stream.analysis.dissonance_stats.percentage}%`
+                      : stream.scored
+                        ? String(stream.scored.reviews.filter((review) => review.dissonance.detected).length)
+                        : "—"
+                  }
                 />
               </div>
 
@@ -446,8 +562,8 @@ export function ResonanceApp() {
                     Agent output
                   </CardTitle>
                   <CardDescription>
-                    Parsed from the TrueForge SSE stream. Day 2 will render this into the
-                    Plutchik dashboard.
+                    SSE text is parsed into React state as each ```resonance-data fence closes.
+                    Charts come in the next step.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -457,18 +573,24 @@ export function ResonanceApp() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {["Researching product context", "Reading CSV via filesystem MCP", "Confirming ingest"].map(
+                      {["Researching product context", "Reading CSV via filesystem MCP", "Scoring reviews"].map(
                         (line) => (
                           <div key={line} className="h-4 animate-pulse rounded bg-muted/60" />
                         ),
                       )}
                     </div>
                   )}
+                  {stream.parseErrors.length ? (
+                    <p className="mt-4 text-xs text-amber-200">
+                      Parser skipped {stream.parseErrors.length} malformed fence
+                      {stream.parseErrors.length === 1 ? "" : "s"} and kept going.
+                    </p>
+                  ) : null}
                   {phase === "done" ? (
                     <p className="mt-4 flex items-center gap-2 text-xs text-cyan-200">
                       <CheckCircle2 className="size-3.5" />
-                      Day 1 done-when: CSV uploaded, agent read it through MCP, subagent
-                      researched the product.
+                      Parser done-when: scored_reviews, cluster_results, and analysis_result are
+                      in React state.
                     </p>
                   ) : null}
                   {error ? (

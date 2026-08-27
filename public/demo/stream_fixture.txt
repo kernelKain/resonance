@@ -1,0 +1,248 @@
+🔍 Researching product context for "Linear"...
+📊 Scoring review 3 of 3...
+
+```resonance-data
+{
+  "type": "scored_reviews",
+  "product_name": "Linear",
+  "product_context": "Linear is a project-management tracker for software teams, in the same category as Jira and Asana.",
+  "total_reviews": 3,
+  "reviews": [
+    {
+      "id": 1,
+      "text": "The product is fine, I guess. It works.",
+      "rating": 4,
+      "plutchik": {
+        "joy": 0.1,
+        "trust": 0.2,
+        "fear": 0.04,
+        "surprise": 0.02,
+        "sadness": 0.45,
+        "disgust": 0.05,
+        "anger": 0.05,
+        "anticipation": 0.1
+      },
+      "dissonance": {
+        "detected": true,
+        "type": "positive_words_negative_emotions",
+        "explanation": "Affirming language with dominant sadness."
+      },
+      "maslow_need": "esteem",
+      "emotion_summary": "Resignation masked as satisfaction"
+    },
+    {
+      "id": 2,
+      "text": "Absolutely love the keyboard-first workflow. Best purchase this year.",
+      "rating": 5,
+      "plutchik": {
+        "joy": 0.86,
+        "trust": 0.78,
+        "fear": 0.01,
+        "surprise": 0.28,
+        "sadness": 0.02,
+        "disgust": 0.01,
+        "anger": 0.01,
+        "anticipation": 0.42
+      },
+      "dissonance": {
+        "detected": false,
+        "type": "none",
+        "explanation": "Literal tone and emotional profile agree."
+      },
+      "maslow_need": "self_actualization",
+      "emotion_summary": "Unconflicted delight"
+    },
+    {
+      "id": 3,
+      "text": "I love it but I probably won't renew.",
+      "rating": 4,
+      "plutchik": {
+        "joy": 0.18,
+        "trust": 0.28,
+        "fear": 0.08,
+        "surprise": 0.06,
+        "sadness": 0.52,
+        "disgust": 0.06,
+        "anger": 0.16,
+        "anticipation": 0.22
+      },
+      "dissonance": {
+        "detected": true,
+        "type": "mixed_signals",
+        "explanation": "Love plus an exit threat in one sentence."
+      },
+      "maslow_need": "esteem",
+      "emotion_summary": "Attachment with planned exit"
+    }
+  ]
+}
+```
+
+🧮 Running emotional clustering in sandbox...
+```resonance-data
+{
+  "type": "cluster_results",
+  "algorithm": "kmeans",
+  "feature_order": ["joy", "trust", "fear", "surprise", "sadness", "disgust", "anger", "anticipation"],
+  "num_clusters": 3,
+  "silhouette_score": 0.61,
+  "k_candidates": { "3": 0.61 },
+  "random_state": 42,
+  "total_reviews": 3,
+  "clusters": [
+    {
+      "id": 0,
+      "size": 1,
+      "centroid": {
+        "joy": 0.1,
+        "trust": 0.2,
+        "fear": 0.04,
+        "surprise": 0.02,
+        "sadness": 0.45,
+        "disgust": 0.05,
+        "anger": 0.05,
+        "anticipation": 0.1
+      },
+      "member_ids": [1],
+      "representative_review_ids": [1]
+    },
+    {
+      "id": 1,
+      "size": 1,
+      "centroid": {
+        "joy": 0.86,
+        "trust": 0.78,
+        "fear": 0.01,
+        "surprise": 0.28,
+        "sadness": 0.02,
+        "disgust": 0.01,
+        "anger": 0.01,
+        "anticipation": 0.42
+      },
+      "member_ids": [2],
+      "representative_review_ids": [2]
+    },
+    {
+      "id": 2,
+      "size": 1,
+      "centroid": {
+        "joy": 0.18,
+        "trust": 0.28,
+        "fear": 0.08,
+        "surprise": 0.06,
+        "sadness": 0.52,
+        "disgust": 0.06,
+        "anger": 0.16,
+        "anticipation": 0.22
+      },
+      "member_ids": [3],
+      "representative_review_ids": [3]
+    }
+  ],
+  "assignments": [
+    { "id": 1, "cluster_id": 0 },
+    { "id": 2, "cluster_id": 1 },
+    { "id": 3, "cluster_id": 2 }
+  ]
+}
+```
+
+🎭 Generating archetype profiles...
+```resonance-data
+{
+  "type": "analysis_result",
+  "product_name": "Linear",
+  "product_context": "Linear is a project-management tracker for software teams, in the same category as Jira and Asana.",
+  "total_reviews": 3,
+  "timestamp": "2026-08-27T12:00:00Z",
+  "emotion_summary": {
+    "dominant_emotion": "trust",
+    "average_scores": {
+      "joy": 0.38,
+      "trust": 0.42,
+      "fear": 0.043,
+      "surprise": 0.12,
+      "sadness": 0.33,
+      "disgust": 0.04,
+      "anger": 0.073,
+      "anticipation": 0.247
+    }
+  },
+  "maslow_distribution": {
+    "safety": 0,
+    "belonging": 0,
+    "esteem": 2,
+    "self_actualization": 1
+  },
+  "dissonance_stats": {
+    "count": 2,
+    "percentage": 66.7,
+    "flagged_review_ids": [1, 3]
+  },
+  "archetypes": [
+    {
+      "cluster_id": 0,
+      "name": "Resigned Satisfied",
+      "profile": "Customers describe the product as fine while sadness leads the emotion profile. They stay because switching costs more than the disappointment.",
+      "dominant_emotions": ["sadness", "trust", "joy"],
+      "dominant_maslow_need": "esteem",
+      "representative_quotes": ["The product is fine, I guess. It works."],
+      "size": 1,
+      "percentage": 33.3
+    },
+    {
+      "cluster_id": 1,
+      "name": "Delighted Craftspeople",
+      "profile": "These customers feel respected by the craft of the tool. They stay because the product makes them faster, not because leaving is hard.",
+      "dominant_emotions": ["joy", "trust", "anticipation"],
+      "dominant_maslow_need": "self_actualization",
+      "representative_quotes": ["Absolutely love the keyboard-first workflow. Best purchase this year."],
+      "size": 1,
+      "percentage": 33.3
+    },
+    {
+      "cluster_id": 2,
+      "name": "Quietly Leaving",
+      "profile": "They still feel attachment and say they love it. Rationally they are already rehearsing the exit.",
+      "dominant_emotions": ["sadness", "trust", "anticipation"],
+      "dominant_maslow_need": "esteem",
+      "representative_quotes": ["I love it but I probably won't renew."],
+      "size": 1,
+      "percentage": 33.3
+    }
+  ],
+  "hidden_asks": [
+    {
+      "id": 1,
+      "title": "Acknowledgement of quiet loyalty",
+      "description": "The Resigned Satisfied archetype praises the product in understatement while scoring high on sadness. No review asks for a loyalty program, but the pattern implies they want their tenure to count.",
+      "evidence_archetype": "Resigned Satisfied",
+      "maslow_need": "esteem",
+      "confidence": "high",
+      "action_items": null
+    },
+    {
+      "id": 2,
+      "title": "A reason to renew that is not guilt",
+      "description": "Quietly Leaving still uses love-language while planning churn. The unmet need is a future they can believe in, not another feature list.",
+      "evidence_archetype": "Quietly Leaving",
+      "maslow_need": "esteem",
+      "confidence": "high",
+      "action_items": null
+    },
+    {
+      "id": 3,
+      "title": "Room to grow inside the tool",
+      "description": "Delighted Craftspeople are the retention core. Their joy sits next to anticipation — they will leave if the product stops expanding with them.",
+      "evidence_archetype": "Delighted Craftspeople",
+      "maslow_need": "self_actualization",
+      "confidence": "medium",
+      "action_items": null
+    }
+  ],
+  "scored_reviews": [],
+  "cluster_results": {}
+}
+```
+
+Stream complete.

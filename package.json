@@ -10,7 +10,8 @@
     "bootstrap": "node scripts/bootstrap.mjs",
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p 43123",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:parse": "npx --yes tsx scripts/validate-stream-parse.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
