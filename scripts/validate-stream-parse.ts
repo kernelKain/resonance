@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { extractResonanceStream } from "../lib/resonance-parse.ts";
+import { extractResonanceStream } from "../lib/resonance-parse";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const FIXTURE = path.join(ROOT, "public/demo/stream_fixture.txt");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -26,7 +26,7 @@ type TickProps = {
   payload?: { value?: string };
   x?: number;
   y?: number;
-  textAnchor?: string;
+  textAnchor?: "start" | "middle" | "end" | "inherit";
 };
 
 function EmotionTick({ payload, x = 0, y = 0, textAnchor = "middle" }: TickProps) {
@@ -48,12 +48,16 @@ function EmotionTick({ payload, x = 0, y = 0, textAnchor = "middle" }: TickProps
   );
 }
 
-export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+function subscribe() {
+  return () => {};
+}
 
+function useIsClient() {
+  return useSyncExternalStore(subscribe, () => true, () => false);
+}
+
+export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
+  const isClient = useIsClient();
   const scores = resolveAverageScores(stream);
   const points = scores ? toRadarPoints(scores) : [];
   const dominant = scores ? dominantEmotion(scores) : null;
@@ -76,7 +80,7 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
       <CardContent>
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_180px]">
           <div className="h-[360px] w-full sm:h-[420px]">
-            {mounted && scores ? (
+            {isClient && scores ? (
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={points} cx="50%" cy="50%" outerRadius="72%">
                   <PolarGrid stroke="rgba(103,232,249,0.18)" />
