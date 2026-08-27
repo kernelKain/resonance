@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { PlutchikMark } from "@/components/plutchik-mark";
+import { PlutchikWheel } from "@/components/plutchik-wheel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -236,7 +237,7 @@ export function ResonanceApp() {
     replayCancelRef.current = false;
     setError(null);
     resetStream();
-    setUploadMeta({ filePath: "public/demo/stream_fixture.txt", rowCount: 3 });
+    setUploadMeta({ filePath: "public/demo/day4_stream_fixture.txt", rowCount: 3 });
     setPhase("running");
     setTranscript([
       {
@@ -247,8 +248,8 @@ export function ResonanceApp() {
     ]);
 
     try {
-      const response = await fetch("/demo/stream_fixture.txt", { cache: "no-store" });
-      if (!response.ok) throw new Error("Could not load stream_fixture.txt");
+      const response = await fetch("/demo/day4_stream_fixture.txt", { cache: "no-store" });
+      if (!response.ok) throw new Error("Could not load day4_stream_fixture.txt");
       const text = await response.text();
       const size = 28;
       for (let i = 0; i < text.length; i += size) {
@@ -378,7 +379,7 @@ export function ResonanceApp() {
             <HealthDot ok={Boolean(health?.filesystemMcp)} label="Filesystem MCP" />
             <HealthDot ok={Boolean(health?.agent)} label="Agent: resonance" />
             <Badge variant="secondary" className="font-mono text-[10px] tracking-wide uppercase">
-              Day 4 parser
+              Day 4 wheel
             </Badge>
           </div>
         </div>
@@ -555,6 +556,8 @@ export function ResonanceApp() {
                 />
               </div>
 
+              <PlutchikWheel stream={stream} />
+
               <Card className="border-cyan-400/10 bg-card/70">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base">
@@ -563,7 +566,7 @@ export function ResonanceApp() {
                   </CardTitle>
                   <CardDescription>
                     SSE text is parsed into React state as each ```resonance-data fence closes.
-                    Charts come in the next step.
+                    The wheel above reads those vectors.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -589,8 +592,8 @@ export function ResonanceApp() {
                   {phase === "done" ? (
                     <p className="mt-4 flex items-center gap-2 text-xs text-cyan-200">
                       <CheckCircle2 className="size-3.5" />
-                      Parser done-when: scored_reviews, cluster_results, and analysis_result are
-                      in React state.
+                      Wheel done-when: polygon is drawn from Plutchik averages, Trust is dominant
+                      on the fixture.
                     </p>
                   ) : null}
                   {error ? (
