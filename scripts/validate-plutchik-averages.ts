@@ -2,16 +2,17 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { extractResonanceStream } from "../lib/resonance-parse.ts";
+import { extractResonanceStream } from "../lib/resonance-parse";
 import {
   dominantEmotion,
   meanPlutchik,
   resolveAverageScores,
   toRadarPoints,
-} from "../lib/plutchik.ts";
+} from "../lib/plutchik";
+import type { EmotionKey, PlutchikScores } from "../lib/resonance-types";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const FIXTURE = path.join(ROOT, "public/demo/day4_stream_fixture.txt");
+const FIXTURE = path.join(ROOT, "public/demo/stream_fixture.txt");
 
 function fail(message: string): never {
   console.error(`FAIL: ${message}`);
@@ -28,8 +29,9 @@ if (!scoredScores) fail("scored-only buffer did not produce averages");
 if (!scoredOnly.scored) fail("scored-only buffer missing scored_reviews");
 if (scoredOnly.analysis) fail("scored-only buffer should not include analysis_result");
 
-const manual = meanPlutchik(scoredOnly.scored.reviews);
-for (const key of Object.keys(manual) as Array<keyof typeof manual>) {
+const manual: PlutchikScores = meanPlutchik(scoredOnly.scored.reviews);
+const emotionKeys = Object.keys(manual) as EmotionKey[];
+for (const key of emotionKeys) {
   if (manual[key] !== scoredScores[key]) {
     fail(`mean mismatch for ${key}: ${manual[key]} vs ${scoredScores[key]}`);
   }

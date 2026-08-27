@@ -11,6 +11,7 @@ import {
   UploadCloud,
 } from "lucide-react";
 
+import { InsightPanel } from "@/components/insight-panel";
 import { PlutchikMark } from "@/components/plutchik-mark";
 import { PlutchikWheel } from "@/components/plutchik-wheel";
 import { Badge } from "@/components/ui/badge";
@@ -379,7 +380,7 @@ export function ResonanceApp() {
             <HealthDot ok={Boolean(health?.filesystemMcp)} label="Filesystem MCP" />
             <HealthDot ok={Boolean(health?.agent)} label="Agent: resonance" />
             <Badge variant="secondary" className="font-mono text-[10px] tracking-wide uppercase">
-              Day 4 wheel
+              Day 4 dashboard
             </Badge>
           </div>
         </div>
@@ -556,7 +557,10 @@ export function ResonanceApp() {
                 />
               </div>
 
-              <PlutchikWheel stream={stream} />
+              <div className="grid gap-4 xl:grid-cols-2">
+                <PlutchikWheel stream={stream} />
+                <InsightPanel stream={stream} />
+              </div>
 
               <Card className="border-cyan-400/10 bg-card/70">
                 <CardHeader>
@@ -566,7 +570,7 @@ export function ResonanceApp() {
                   </CardTitle>
                   <CardDescription>
                     SSE text is parsed into React state as each ```resonance-data fence closes.
-                    The wheel above reads those vectors.
+                    The wheel and cards above read those payloads.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -592,8 +596,8 @@ export function ResonanceApp() {
                   {phase === "done" ? (
                     <p className="mt-4 flex items-center gap-2 text-xs text-cyan-200">
                       <CheckCircle2 className="size-3.5" />
-                      Wheel done-when: polygon is drawn from Plutchik averages, Trust is dominant
-                      on the fixture.
+                      Day 4 done-when: wheel, archetype cards, and dissonance alerts all render
+                      from streamed JSON.
                     </p>
                   ) : null}
                   {error ? (
