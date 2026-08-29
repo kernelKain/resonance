@@ -25,6 +25,66 @@ const KIND_LABEL: Record<TranscriptItem["kind"], string | null> = {
   error: "Error",
 };
 
+// ─── Dev-mode structured sections ────────────────────────────────────────────
+
+type DevSection = { label: string; content: string; present: boolean };
+
+/**
+ * Splits the raw assistant text into named pipeline sections using the
+ * resonance-data fence markers and the stream state produced by the parser.
+ * Each section is presented as a collapsible <details> block.
+ */
+function buildDevSections(assistant: string, stream: ResonanceStreamState): DevSection[] {
+  // Extract all resonance-data fence bodies in order of appearance
+  const fenceRe = /```resonance-data[^\n]*\r?\n([\s\S]*?)```/g;
+  const fences: string[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = fenceRe.exec(assistant)) !== null) {
+    fences.push((match[1] ?? "").trim());
+  }
+
+  // Assign fences to pipeline stages by sniffing the "type" field
+  function pickFence(type: string): string | null {
+    return fences.find((f) => f.includes(`"type":"${type}"`) || f.includes(`"type": "${type}"`)) ?? null;
+  }
+
+  const sections: DevSection[] = [
+    {
+      label: "① Scored Reviews",
+      content: pickFence("scored_reviews") ?? (stream.scored ? JSON.stringify(stream.scored, null, 2) : ""),
+      present: !!stream.scored,
+    },
+    {
+      label: "② Cluster Results",
+      content: pickFence("cluster_results") ?? (stream.clustered ? JSON.stringify(stream.clustered, null, 2) : ""),
+      present: !!stream.clustered,
+    },
+    {
+      label: "③ Analysis Result",
+      content: pickFence("analysis_result") ?? (stream.analysis ? JSON.stringify(stream.analysis, null, 2) : ""),
+      present: !!stream.analysis,
+    },
+    {
+      label: "④ Approval Request",
+      content: pickFence("approval_request") ?? (stream.approval ? JSON.stringify(stream.approval, null, 2) : ""),
+      present: !!stream.approval,
+    },
+    {
+      label: "⑤ Action Items",
+      content: pickFence("action_items") ?? (stream.actionItems ? JSON.stringify(stream.actionItems, null, 2) : ""),
+      present: !!stream.actionItems,
+    },
+  ];
+
+  // Raw remainder — strip all resonance-data fences and show leftover text
+  const stripped = assistant.replace(/```resonance-data[\s\S]*?```/g, "").trim();
+  if (stripped) {
+    sections.push({ label: "⑥ Raw Output", content: stripped, present: true });
+  }
+
+  return sections;
+}
+
 export function AgentOutput({ stream, phase, assistant, error, devMode, transcript }: AgentOutputProps) {
   // Simplified log: only surface status/tool/subagent/error events to regular users
   const logItems = transcript.filter((t) => KIND_LABEL[t.kind] !== null);
@@ -44,10 +104,41 @@ export function AgentOutput({ stream, phase, assistant, error, devMode, transcri
         {/* Progress stepper — always visible */}
         <AnalysisProgress stream={stream} phase={phase} />
 
-        {/* Dev: raw assistant output */}
+        {/* Dev: structured pipeline sections */}
         {devMode && assistant ? (
-          <div className="prose prose-invert max-w-none text-sm leading-7 whitespace-pre-wrap border-t border-cyan-400/10 pt-4">
-            {assistant}
+          <div className="space-y-2 border-t border-cyan-400/10 pt-4">
+            <p className="font-mono text-[10px] tracking-[0.2em] text-muted-foreground uppercase mb-3">
+              Pipeline Stages
+            </p>
+            {buildDevSections(assistant, stream).map((section) => (
+              <details
+                key={section.label}
+                className={cn(
+                  "group rounded-lg border text-xs",
+                  section.present
+                    ? "border-cyan-400/20 bg-cyan-400/5"
+                    : "border-border/40 bg-muted/20 opacity-50",
+                )}
+              >
+                <summary className="flex cursor-pointer select-none items-center gap-2 px-3 py-2 font-mono tracking-wide text-cyan-200/80 list-none">
+                  <span
+                    className={cn(
+                      "size-1.5 shrink-0 rounded-full",
+                      section.present ? "bg-cyan-400" : "bg-zinc-600",
+                    )}
+                  />
+                  {section.label}
+                  {!section.present && (
+                    <span className="ml-auto font-mono text-[10px] text-muted-foreground">pending</span>
+                  )}
+                </summary>
+                {section.content && (
+                  <pre className="overflow-x-auto whitespace-pre-wrap break-words border-t border-cyan-400/10 px-3 py-3 font-mono text-[11px] leading-5 text-slate-300">
+                    {section.content}
+                  </pre>
+                )}
+              </details>
+            ))}
           </div>
         ) : logItems.length > 0 ? (
           /* Non-dev: simplified activity log */

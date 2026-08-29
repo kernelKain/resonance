@@ -43,7 +43,7 @@ const STAGES: Stage[] = [
   {
     key: "done",
     label: "Done",
-    hint: "Analysis complete. Recommendations are ready to review.",
+    hint: "Analysis complete — recommendations are ready.",
   },
 ];
 
