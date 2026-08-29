@@ -201,17 +201,17 @@ export function InsightPanel({ stream }: { stream: ResonanceStreamState }) {
             <TabsTrigger value="archetypes" className="group px-2 py-2 text-xs sm:text-sm">
               <Users className="size-3.5" />
               Segments ({archetypes.length})
-              <div className="hidden hidden xl:block"><InfoTooltip content="Distinct behavioral profiles identified by clustering emotional signatures and phrasing patterns across reviews." /></div>
+              <div className="hidden xl:block"><InfoTooltip content="Distinct behavioral profiles identified by clustering emotional signatures and phrasing patterns across reviews." /></div>
             </TabsTrigger>
             <TabsTrigger value="asks" className="group px-2 py-2 text-xs sm:text-sm">
               <Sparkles className="size-3.5" />
               Unspoken Needs ({asks.length})
-              <div className="hidden hidden xl:block"><InfoTooltip content="Latent desires that users express through emotional subtext rather than direct feature requests." /></div>
+              <div className="hidden xl:block"><InfoTooltip content="Latent desires that users express through emotional subtext rather than direct feature requests." /></div>
             </TabsTrigger>
             <TabsTrigger value="dissonance" className="group px-2 py-2 text-xs sm:text-sm">
               <AlertTriangle className="size-3.5" />
               Red Flags ({alerts.length})
-              <div className="hidden hidden xl:block"><InfoTooltip content="Cognitive dissonance detected when a user's literal words contradict their underlying emotional state." /></div>
+              <div className="hidden xl:block"><InfoTooltip content="Cognitive dissonance detected when a user's literal words contradict their underlying emotional state." /></div>
             </TabsTrigger>
             <TabsTrigger value="actions" className="px-2 py-2 text-xs sm:text-sm">
               <Waypoints className="size-3.5" />

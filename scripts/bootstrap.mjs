@@ -7,7 +7,7 @@ const TRUEFORGE = process.env.TRUEFORGE_BASE_URL ?? "http://127.0.0.1:8790";
 const AGENT_NAME = process.env.TRUEFORGE_AGENT_NAME ?? "resonance";
 const MCP_URL = process.env.MCP_URL ?? "http://127.0.0.1:8792/mcp";
 const MODEL_FQN =
-  process.env.TRUEFORGE_MODEL ?? "google-gemini/gemini-3-1-pro-preview";
+  process.env.TRUEFORGE_MODEL ?? "openrouter/nvidia-nemotron-3-ultra-550b-a-55b-free";
 
 function loadEnvFiles() {
   for (const filename of [".env", ".env.local"]) {
@@ -49,26 +49,26 @@ async function tf(pathname, init = {}) {
   return body;
 }
 
-function geminiModels() {
+function openRouterModels() {
   return [
     {
-      model_id: "gemini-3.1-pro-preview",
-      name: "gemini-3-1-pro-preview",
-      properties: { context_length: 1048576, max_output_tokens: 65536 },
+      model_id: "nvidia/nemotron-3-ultra-550b-a55b:free",
+      name: "nvidia-nemotron-3-ultra-550b-a-55b-free",
+      properties: { context_length: 1000000, max_output_tokens: 65536 },
     },
     {
-      model_id: "gemini-3.6-flash",
-      name: "gemini-3-6-flash",
+      model_id: "minimax/minimax-m3:free",
+      name: "minimax-minimax-m-3-free",
       properties: { context_length: 1048576, max_output_tokens: 65536 },
     },
   ];
 }
 
 async function upsertModelProvider() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey || apiKey === "your_actual_key_here") {
     console.log(
-      "• Skipping Google Gemini provider (no GEMINI_API_KEY). Add it in TrueForge Settings → Models, or put it in .env.local and re-run bootstrap.",
+      "• Skipping OpenRouter provider (no valid OPENROUTER_API_KEY). Add it in TrueForge Settings → Models, or put it in .env.local and re-run bootstrap.",
     );
     return;
   }
@@ -77,13 +77,15 @@ async function upsertModelProvider() {
     method: "PUT",
     body: JSON.stringify({
       manifest: {
-        type: "google-gemini",
+        type: "custom",
+        name: "openrouter",
+        base_url: "https://openrouter.ai/api/v1",
         auth: { api_key: apiKey },
-        models: geminiModels(),
+        models: openRouterModels(),
       },
     }),
   });
-  console.log("• Model provider google-gemini configured.");
+  console.log("• Model provider openrouter configured.");
 }
 
 async function upsertSandboxProvider() {
@@ -193,7 +195,13 @@ async function main() {
   }
 
   await upsertModelProvider();
-  await upsertSandboxProvider();
+  
+  try {
+    await upsertSandboxProvider();
+  } catch (err) {
+    console.error(`• Warning: Sandbox provisioning failed: ${err.message}`);
+  }
+
   await upsertMcp({
     type: "remote",
     name: "filesystem",
