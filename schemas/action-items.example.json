@@ -1,0 +1,23 @@
+{
+  "type": "action_items",
+  "items": [
+    {
+      "hidden_ask": "Acknowledgement of quiet loyalty",
+      "recommendation": "Ship a tenure-aware changelog and a visible years-with-us marker on the account page so long-term users see that staying counted.",
+      "priority": "high",
+      "effort": "M"
+    },
+    {
+      "hidden_ask": "A place to ask naive questions",
+      "recommendation": "Add a first-week office-hours channel where new teams can ask basic questions without a public ticket.",
+      "priority": "medium",
+      "effort": "S"
+    },
+    {
+      "hidden_ask": "Recoverability they can trust",
+      "recommendation": "Expose a one-click restore drill that proves history can come back, instead of leaving teams to run unofficial nightly exports.",
+      "priority": "high",
+      "effort": "L"
+    }
+  ]
+}

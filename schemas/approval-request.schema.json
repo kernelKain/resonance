@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Resonance approval_request payload",
+  "type": "object",
+  "required": ["type", "message", "hidden_ask_count"],
+  "properties": {
+    "type": { "const": "approval_request" },
+    "message": { "type": "string", "minLength": 20 },
+    "hidden_ask_count": { "type": "integer", "minimum": 1, "maximum": 5 }
+  },
+  "additionalProperties": false
+}

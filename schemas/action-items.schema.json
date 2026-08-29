@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Resonance action_items payload",
+  "type": "object",
+  "required": ["type", "items"],
+  "properties": {
+    "type": { "const": "action_items" },
+    "items": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "required": ["hidden_ask", "recommendation", "priority", "effort"],
+        "properties": {
+          "hidden_ask": { "type": "string", "minLength": 3 },
+          "recommendation": { "type": "string", "minLength": 20 },
+          "priority": { "enum": ["high", "medium", "low"] },
+          "effort": { "enum": ["S", "M", "L"] }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

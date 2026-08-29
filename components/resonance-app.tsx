@@ -11,6 +11,7 @@ import {
   UploadCloud,
 } from "lucide-react";
 
+import { ApprovalModal } from "@/components/approval-modal";
 import { InsightPanel } from "@/components/insight-panel";
 import { PlutchikMark } from "@/components/plutchik-mark";
 import { PlutchikWheel } from "@/components/plutchik-wheel";
@@ -23,8 +24,16 @@ import {
   emptyResonanceStream,
   extractResonanceStream,
   statusTextFromStream,
+  type ResonancePhase,
   type ResonanceStreamState,
 } from "@/lib/resonance-parse";
+import {
+  applyTurnEvent,
+  REPLAY_TOOL_CALL_ID,
+  replayPendingQuestion,
+  type PendingUserQuestion,
+  type TurnIngest,
+} from "@/lib/trueforge-events";
 import { cn } from "@/lib/utils";
 
 type Health = {
@@ -34,13 +43,17 @@ type Health = {
   agentName: string;
 };
 
-type Phase = "idle" | "uploading" | "running" | "done" | "error";
-
 type TranscriptItem = {
   id: string;
   kind: "user" | "assistant" | "status" | "tool" | "subagent" | "error";
   text: string;
 };
+
+const HITL_PAUSE_MARKER = "<!-- HITL_PAUSE -->";
+
+function excavationPrompt(productName: string, basename: string, rowCount: number) {
+  return `Follow the Day 5 protocol for product "${productName}". CSV file is ${basename} (${rowCount} reviews). Read it with the filesystem MCP (basename only — never a demo_data/ prefix). Spawn a subagent to research the product with Exa. Score every row. Emit the scored_reviews resonance-data fence. Persist scored_reviews.json. Copy scripts/cluster.py into the TrueForge sandbox and run cluster.py there. Emit cluster_results VERBATIM from cluster.py. Then name one archetype per cluster and write 3–5 Hidden Asks with action_items null. Emit analysis_result. Then emit approval_request and call ask_user_question with options Approved and Decline. Do not emit action_items until the user answers Approved.`;
+}
 
 function summarizeEvent(event: Record<string, unknown>): TranscriptItem | null {
   const type = String(event.type ?? "");
@@ -66,6 +79,13 @@ function summarizeEvent(event: Record<string, unknown>): TranscriptItem | null {
   if (type === "sandbox.created") {
     return { id: crypto.randomUUID(), kind: "tool", text: "Sandbox provisioned." };
   }
+  if (type === "tool.response_required") {
+    return {
+      id: crypto.randomUUID(),
+      kind: "status",
+      text: "TrueForge paused on ask_user_question — waiting for Approved or Decline.",
+    };
+  }
   if (type === "tool.approval_required") {
     return {
       id: crypto.randomUUID(),
@@ -86,7 +106,8 @@ function summarizeEvent(event: Record<string, unknown>): TranscriptItem | null {
 
 function deltaText(event: Record<string, unknown>): string {
   if (event.type !== "model.message.delta") return "";
-  if (event.threadId && event.threadId !== "main") return "";
+  const threadId = String(event.thread_id ?? event.threadId ?? "main");
+  if (threadId && threadId !== "main") return "";
   const content = event.content;
   if (typeof content === "string") return content;
   return "";
@@ -129,10 +150,10 @@ function HealthDot({ ok, label }: { ok: boolean; label: string }) {
       <span
         className={cn(
           "size-1.5 rounded-full",
-          ok ? "bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)]" : "bg-zinc-600",
+          ok ? "bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.95)]" : "bg-zinc-600",
         )}
       />
-      <span className={ok ? "text-foreground" : undefined}>{label}</span>
+      <span className={ok ? "text-cyan-100" : undefined}>{label}</span>
     </div>
   );
 }
@@ -145,7 +166,7 @@ export function ResonanceApp() {
   const [productName, setProductName] = useState("Linear");
   const [file, setFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
-  const [phase, setPhase] = useState<Phase>("idle");
+  const [phase, setPhase] = useState<ResonancePhase>("idle");
   const [error, setError] = useState<string | null>(null);
   const [health, setHealth] = useState<Health | null>(null);
   const [transcript, setTranscript] = useState<TranscriptItem[]>([]);
@@ -155,17 +176,30 @@ export function ResonanceApp() {
     filePath: string;
     rowCount: number;
   } | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [pendingQuestion, setPendingQuestion] = useState<PendingUserQuestion | null>(null);
+  const [replayTail, setReplayTail] = useState<string>("");
+  const [decisionBusy, setDecisionBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const assistantRef = useRef("");
   const replayCancelRef = useRef(false);
 
   const canRun = Boolean(productName.trim() && file);
+  const showWorkbench =
+    phase === "running" ||
+    phase === "awaiting_approval" ||
+    phase === "done" ||
+    (phase === "error" && Boolean(uploadMeta || assistant));
 
   function resetStream() {
     assistantRef.current = "";
     setAssistant("");
     setStream(emptyResonanceStream());
     setTranscript([]);
+    setPendingQuestion(null);
+    setReplayTail("");
+    setSessionId(null);
+    setDecisionBusy(false);
   }
 
   function ingestAssistantChunk(piece: string) {
@@ -238,7 +272,7 @@ export function ResonanceApp() {
     replayCancelRef.current = false;
     setError(null);
     resetStream();
-    setUploadMeta({ filePath: "public/demo/day4_stream_fixture.txt", rowCount: 3 });
+    setUploadMeta({ filePath: "public/demo/stream_fixture.txt", rowCount: 3 });
     setPhase("running");
     setTranscript([
       {
@@ -249,8 +283,8 @@ export function ResonanceApp() {
     ]);
 
     try {
-      const response = await fetch("/demo/day4_stream_fixture.txt", { cache: "no-store" });
-      if (!response.ok) throw new Error("Could not load day4_stream_fixture.txt");
+      const response = await fetch("/demo/stream_fixture.txt", { cache: "no-store" });
+      if (!response.ok) throw new Error("Could not load stream_fixture.txt");
       const text = await response.text();
       const size = 28;
       for (let i = 0; i < text.length; i += size) {
@@ -264,6 +298,115 @@ export function ResonanceApp() {
       setError(message);
       setPhase("error");
     }
+  }
+
+  async function replayHitlFixture() {
+    replayCancelRef.current = false;
+    setError(null);
+    resetStream();
+    setUploadMeta({ filePath: "public/demo/day5_stream_fixture.txt", rowCount: 3 });
+    setPhase("running");
+    setTranscript([
+      {
+        id: crypto.randomUUID(),
+        kind: "status",
+        text: "Replaying the Day 5 HITL fixture. No model call. The stream will pause for Approved.",
+      },
+    ]);
+
+    try {
+      const response = await fetch("/demo/day5_stream_fixture.txt", { cache: "no-store" });
+      if (!response.ok) throw new Error("Could not load day5_stream_fixture.txt");
+      const text = await response.text();
+      const markerAt = text.indexOf(HITL_PAUSE_MARKER);
+      if (markerAt < 0) throw new Error("HITL fixture is missing <!-- HITL_PAUSE -->");
+      const before = text.slice(0, markerAt);
+      const after = text.slice(markerAt + HITL_PAUSE_MARKER.length);
+      const size = 28;
+      for (let i = 0; i < before.length; i += size) {
+        if (replayCancelRef.current) return;
+        ingestAssistantChunk(before.slice(i, i + size));
+        await sleep(12);
+      }
+      const parsed = extractResonanceStream(assistantRef.current);
+      setReplayTail(after);
+      setPendingQuestion(
+        replayPendingQuestion(
+          parsed.approval?.message ??
+            "I found 3 Hidden Asks. Approve to generate product-roadmap recommendations.",
+        ),
+      );
+      setTranscript((current) => [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          kind: "status",
+          text: "Replay paused. Click Approved to stream action_items.",
+        },
+      ]);
+      setPhase("awaiting_approval");
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : "HITL replay failed.";
+      setError(message);
+      setPhase("error");
+    }
+  }
+
+  async function openSession(): Promise<string> {
+    const sessionRes = await fetch("/api/session", { method: "POST" });
+    const sessionJson = (await sessionRes.json()) as {
+      sessionId?: string;
+      error?: string;
+    };
+    if (!sessionRes.ok || !sessionJson.sessionId) {
+      throw new Error(sessionJson.error ?? "Could not open a TrueForge session.");
+    }
+    setSessionId(sessionJson.sessionId);
+    return sessionJson.sessionId;
+  }
+
+  async function streamTurn(nextSessionId: string, body: Record<string, unknown>) {
+    const turnRes = await fetch("/api/turn", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ sessionId: nextSessionId, ...body }),
+    });
+
+    if (!turnRes.ok) {
+      const failed = (await turnRes.json()) as { error?: string };
+      throw new Error(failed.error ?? "TrueForge turn failed.");
+    }
+
+    const messages = new Map<string, Record<string, unknown>>();
+    let ingest: TurnIngest = { pending: pendingQuestion, paused: false };
+
+    await readSse(turnRes, (event) => {
+      ingest = applyTurnEvent(event, messages, ingest);
+      const piece = deltaText(event);
+      if (piece) {
+        ingestAssistantChunk(piece);
+        return;
+      }
+      const item = summarizeEvent(event);
+      if (item) {
+        setTranscript((current) => [...current, item]);
+      }
+    });
+
+    const parsed = extractResonanceStream(assistantRef.current);
+    if (ingest.paused) {
+      setPendingQuestion(
+        ingest.pending ??
+          (parsed.approval
+            ? replayPendingQuestion(parsed.approval.message)
+            : pendingQuestion),
+      );
+      setPhase("awaiting_approval");
+      return;
+    }
+
+    setPendingQuestion(null);
+    setPhase("done");
   }
 
   async function runExcavation() {
@@ -293,18 +436,10 @@ export function ResonanceApp() {
         rowCount: uploadJson.rowCount ?? 0,
       });
 
-      const sessionRes = await fetch("/api/session", { method: "POST" });
-      const sessionJson = (await sessionRes.json()) as {
-        sessionId?: string;
-        error?: string;
-      };
-      if (!sessionRes.ok || !sessionJson.sessionId) {
-        throw new Error(sessionJson.error ?? "Could not open a TrueForge session.");
-      }
-
+      const nextSessionId = await openSession();
       const basename =
         uploadJson.filename ?? uploadJson.filePath.split("/").pop() ?? file.name;
-      const message = `Follow the Day 3 protocol through archetypes and Hidden Asks for product "${productName.trim()}". CSV file is ${basename} (${uploadJson.rowCount} reviews). Read it with the filesystem MCP (basename only — never a demo_data/ prefix). Spawn a subagent to research the product with Exa. Score every row. Emit the scored_reviews resonance-data fence. Persist scored_reviews.json. Copy scripts/cluster.py into the TrueForge sandbox and run cluster.py there. Emit cluster_results VERBATIM from cluster.py. Then name one archetype per cluster and write 3–5 Hidden Asks with action_items null. Emit analysis_result. Then STOP. No product-roadmap recommendations. No approval_request. No action_items fence.`;
+      const message = excavationPrompt(productName.trim(), basename, uploadJson.rowCount ?? 0);
 
       setTranscript([
         {
@@ -314,34 +449,7 @@ export function ResonanceApp() {
         },
       ]);
       setPhase("running");
-
-      const turnRes = await fetch("/api/turn", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          sessionId: sessionJson.sessionId,
-          message,
-        }),
-      });
-
-      if (!turnRes.ok) {
-        const failed = (await turnRes.json()) as { error?: string };
-        throw new Error(failed.error ?? "TrueForge turn failed.");
-      }
-
-      await readSse(turnRes, (event) => {
-        const piece = deltaText(event);
-        if (piece) {
-          ingestAssistantChunk(piece);
-          return;
-        }
-        const item = summarizeEvent(event);
-        if (item) {
-          setTranscript((current) => [...current, item]);
-        }
-      });
-
-      setPhase("done");
+      await streamTurn(nextSessionId, { message });
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "Run failed.";
       setError(message);
@@ -349,58 +457,137 @@ export function ResonanceApp() {
     }
   }
 
-  const parsedLabel = stream.analysis
-    ? "analysis_result"
-    : stream.clustered
-      ? "cluster_results"
-      : stream.scored
-        ? "scored_reviews"
-        : "none yet";
+  async function runHitlSmoke() {
+    replayCancelRef.current = true;
+    setError(null);
+    resetStream();
+    setUploadMeta({ filePath: "HITL_SMOKE", rowCount: 0 });
+    setProductName("Linear");
+
+    try {
+      const nextSessionId = await openSession();
+      const message = "HITL_SMOKE. Pause for approval. Do not read a CSV.";
+      setTranscript([
+        {
+          id: crypto.randomUUID(),
+          kind: "user",
+          text: message,
+        },
+      ]);
+      setPhase("running");
+      await streamTurn(nextSessionId, { message });
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : "HITL smoke failed.";
+      setError(message);
+      setPhase("error");
+    }
+  }
+
+  async function decide(content: "Approved" | "Decline") {
+    if (!pendingQuestion?.toolCallId || decisionBusy) return;
+    setDecisionBusy(true);
+    setError(null);
+
+    try {
+      setTranscript((current) => [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          kind: "user",
+          text: content,
+        },
+      ]);
+
+      if (pendingQuestion.toolCallId === REPLAY_TOOL_CALL_ID) {
+        if (content === "Approved") {
+          const tail = replayTail;
+          const size = 28;
+          for (let i = 0; i < tail.length; i += size) {
+            ingestAssistantChunk(tail.slice(i, i + size));
+            await sleep(12);
+          }
+        }
+        setPendingQuestion(null);
+        setReplayTail("");
+        setPhase("done");
+        return;
+      }
+
+      if (!sessionId) {
+        throw new Error("TrueForge session was lost. Start a new run.");
+      }
+
+      setPhase("running");
+      await streamTurn(sessionId, {
+        toolResponse: {
+          threadId: pendingQuestion.threadId,
+          toolCallId: pendingQuestion.toolCallId,
+          content,
+        },
+      });
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : "Could not resume the turn.";
+      setError(message);
+      setPhase("error");
+    } finally {
+      setDecisionBusy(false);
+    }
+  }
+
+  const parsedLabel = stream.actionItems
+    ? "action_items"
+    : stream.approval
+      ? "approval_request"
+      : stream.analysis
+        ? "analysis_result"
+        : stream.clustered
+          ? "cluster_results"
+          : stream.scored
+            ? "scored_reviews"
+            : "none yet";
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),transparent_42%),radial-gradient(circle_at_80%_20%,rgba(251,146,60,0.08),transparent_30%)]" />
-      <div className="pointer-events-none absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(148,163,184,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.06)_1px,transparent_1px)] [background-size:48px_48px]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.16),transparent_46%),radial-gradient(circle_at_88%_12%,rgba(251,146,60,0.14),transparent_32%)]" />
+      <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(34,211,238,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.07)_1px,transparent_1px)] [background-size:52px_52px]" />
 
-      <header className="relative z-10 border-b border-cyan-400/10 bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <PlutchikMark className="size-10" />
+      <header className="relative z-10 border-b border-cyan-400/15 bg-background/75 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="flex items-center gap-3.5">
+            <PlutchikMark className="size-11 drop-shadow-[0_0_16px_rgba(34,211,238,0.45)]" />
             <div>
-              <p className="font-mono text-[11px] tracking-[0.28em] text-cyan-300/80 uppercase">
+              <p className="font-mono text-[11px] tracking-[0.32em] text-cyan-300 uppercase">
                 Resonance
               </p>
-              <h1 className="text-lg font-semibold tracking-tight">
+              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
                 Customer Emotion Archaeology
               </h1>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <HealthDot ok={Boolean(health?.trueforge)} label="TrueForge :8790" />
             <HealthDot ok={Boolean(health?.filesystemMcp)} label="Filesystem MCP" />
             <HealthDot ok={Boolean(health?.agent)} label="Agent: resonance" />
-            <Badge variant="secondary" className="font-mono text-[10px] tracking-wide uppercase">
-              Day 4 dashboard
-            </Badge>
+            <Badge className="font-mono text-[10px] tracking-wide uppercase">Day 5 HITL</Badge>
           </div>
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto grid max-w-7xl gap-6 px-4 py-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <main className="relative z-10 mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <section className="min-w-0">
-          {phase === "idle" || phase === "uploading" || (phase === "error" && !uploadMeta) ? (
-            <Card className="mx-auto max-w-xl border-cyan-400/15 bg-card/80 shadow-[0_0_80px_rgba(8,145,178,0.08)]">
-              <CardHeader>
-                <CardTitle className="text-2xl tracking-tight">
+          {!showWorkbench ? (
+            <Card className="mx-auto max-w-xl border-cyan-400/20 bg-card/85 shadow-[0_0_90px_rgba(8,145,178,0.12)]">
+              <CardHeader className="gap-3 px-6 pt-6">
+                <CardTitle className="text-3xl tracking-tight">
                   Run a psychological excavation
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-[0.95rem] leading-7">
                   Standard sentiment tools flatten reviews into three buckets. Resonance reads
-                  the file through TrueForge MCP, then a subagent researches the product on the
-                  live web.
+                  the file through TrueForge MCP, then pauses for your approval before any
+                  product-roadmap recommendations.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-5">
+              <CardContent className="space-y-6 px-6 pb-6">
                 <div className="space-y-2">
                   <label className="text-sm font-medium" htmlFor="product">
                     Product / brand
@@ -410,7 +597,7 @@ export function ResonanceApp() {
                     value={productName}
                     onChange={(event) => setProductName(event.target.value)}
                     placeholder="Linear"
-                    className="h-10 bg-background/60"
+                    className="h-11 bg-background/60 text-base"
                   />
                 </div>
 
@@ -427,26 +614,26 @@ export function ResonanceApp() {
                     if (dropped) setFile(dropped);
                   }}
                   className={cn(
-                    "rounded-xl border border-dashed px-4 py-10 text-center transition-colors",
+                    "rounded-xl border border-dashed px-4 py-12 text-center transition-colors",
                     dragOver
-                      ? "border-cyan-300 bg-cyan-400/10"
-                      : "border-border bg-background/40",
+                      ? "border-cyan-300 bg-cyan-400/10 shadow-[inset_0_0_40px_rgba(34,211,238,0.12)]"
+                      : "border-cyan-400/25 bg-background/40",
                   )}
                 >
                   <UploadCloud className="mx-auto mb-3 size-8 text-cyan-300" />
                   <p className="text-sm font-medium">Drop a CSV or click to select</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Required column: <code className="font-mono">review_text</code>. Optional:
-                    rating, date, author.
+                  <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                    Required column: <code className="font-mono text-cyan-200">review_text</code>.
+                    Optional: rating, date, author.
                   </p>
                   <input
-                    className="mt-4 block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-cyan-400 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-950"
+                    className="mt-5 block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-cyan-400 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-950"
                     type="file"
                     accept=".csv,text/csv"
                     onChange={(event) => setFile(event.target.files?.[0] ?? null)}
                   />
                   {file ? (
-                    <p className="mt-3 flex items-center justify-center gap-2 text-xs text-cyan-100">
+                    <p className="mt-4 flex items-center justify-center gap-2 text-xs text-cyan-100">
                       <FileSpreadsheet className="size-3.5" />
                       {file.name}
                     </p>
@@ -456,7 +643,7 @@ export function ResonanceApp() {
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Button
                     size="lg"
-                    className="flex-1 bg-cyan-400 text-slate-950 hover:bg-cyan-300"
+                    className="flex-1"
                     disabled={!canRun || phase === "uploading"}
                     onClick={() => void runExcavation()}
                   >
@@ -479,17 +666,31 @@ export function ResonanceApp() {
                     Replay parsed fixture
                   </Button>
                 </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button size="lg" variant="outline" className="flex-1" onClick={() => void replayHitlFixture()}>
+                    Replay HITL fixture
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="flex-1"
+                    disabled={!harnessReady}
+                    onClick={() => void runHitlSmoke()}
+                  >
+                    HITL smoke (live)
+                  </Button>
+                </div>
 
                 {!harnessReady ? (
-                  <p className="rounded-lg border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-xs text-amber-100">
-                    Harness is not fully up. Replay parsed fixture works without it. For a live
-                    run, start TrueForge on :8790, the filesystem MCP, then run{" "}
-                    <code className="font-mono">npm run bootstrap</code>.
+                  <p className="rounded-lg border border-amber-400/25 bg-amber-400/8 px-3.5 py-3 text-xs leading-5 text-amber-100">
+                    Harness is not fully up. Replay HITL fixture works without it. For a live
+                    pause, start TrueForge on :8790, the filesystem MCP, then run{" "}
+                    <code className="font-mono text-cyan-200">npm run bootstrap</code>.
                   </p>
                 ) : null}
 
                 {error ? (
-                  <p className="flex items-start gap-2 text-sm text-rose-300">
+                  <p className="flex items-start gap-2 text-sm leading-6 text-rose-300">
                     <AlertTriangle className="mt-0.5 size-4 shrink-0" />
                     {error}
                   </p>
@@ -497,14 +698,18 @@ export function ResonanceApp() {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <div>
-                  <p className="font-mono text-[11px] tracking-[0.2em] text-cyan-300/80 uppercase">
+            <div className="space-y-5">
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="font-mono text-[11px] tracking-[0.24em] text-cyan-300 uppercase">
                     Live excavation
                   </p>
-                  <h2 className="text-2xl font-semibold tracking-tight">{productName}</h2>
-                  <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{statusLine}</p>
+                  <h2 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+                    {productName}
+                  </h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                    {statusLine}
+                  </p>
                 </div>
                 <Button
                   variant="outline"
@@ -517,11 +722,8 @@ export function ResonanceApp() {
                 </Button>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <Metric
-                  label="Reviews on disk"
-                  value={uploadMeta ? String(uploadMeta.rowCount) : "—"}
-                />
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <Metric label="Reviews on disk" value={uploadMeta ? String(uploadMeta.rowCount) : "—"} />
                 <Metric
                   label="Scored in state"
                   value={stream.scored ? String(stream.scored.total_reviews) : "—"}
@@ -530,13 +732,10 @@ export function ResonanceApp() {
                   label="Clusters k"
                   value={stream.clustered ? String(stream.clustered.num_clusters) : "—"}
                 />
-                <Metric
-                  label="Latest payload"
-                  value={parsedLabel}
-                />
+                <Metric label="Latest payload" value={parsedLabel} />
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-3">
                 <Metric
                   label="Archetypes"
                   value={stream.analysis ? String(stream.analysis.archetypes.length) : "—"}
@@ -546,30 +745,25 @@ export function ResonanceApp() {
                   value={stream.analysis ? String(stream.analysis.hidden_asks.length) : "—"}
                 />
                 <Metric
-                  label="Dissonance"
-                  value={
-                    stream.analysis
-                      ? `${stream.analysis.dissonance_stats.percentage}%`
-                      : stream.scored
-                        ? String(stream.scored.reviews.filter((review) => review.dissonance.detected).length)
-                        : "—"
-                  }
+                  label="Recommendations"
+                  value={stream.actionItems ? String(stream.actionItems.items.length) : "paused"}
+                  accent={Boolean(stream.actionItems)}
                 />
               </div>
 
-              <div className="grid gap-4 xl:grid-cols-2">
+              <div className="grid gap-5 xl:grid-cols-2">
                 <PlutchikWheel stream={stream} />
                 <InsightPanel stream={stream} />
               </div>
 
-              <Card className="border-cyan-400/10 bg-card/70">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
+              <Card className="border-cyan-400/15 bg-card/80">
+                <CardHeader className="gap-2">
+                  <CardTitle className="flex items-center gap-2 text-lg tracking-tight">
                     <Radio className="size-4 text-cyan-300" />
                     Agent output
                   </CardTitle>
-                  <CardDescription>
-                    SSE text is parsed into React state as each ```resonance-data fence closes.
+                  <CardDescription className="leading-6">
+                    SSE text is parsed into React state as each resonance-data fence closes.
                     The wheel and cards above read those payloads.
                   </CardDescription>
                 </CardHeader>
@@ -582,27 +776,26 @@ export function ResonanceApp() {
                     <div className="space-y-3">
                       {["Researching product context", "Reading CSV via filesystem MCP", "Scoring reviews"].map(
                         (line) => (
-                          <div key={line} className="h-4 animate-pulse rounded bg-muted/60" />
+                          <div key={line} className="h-4 animate-pulse rounded bg-muted/70" />
                         ),
                       )}
                     </div>
                   )}
                   {stream.parseErrors.length ? (
-                    <p className="mt-4 text-xs text-amber-200">
+                    <p className="mt-4 text-xs leading-5 text-amber-200">
                       Parser skipped {stream.parseErrors.length} malformed fence
                       {stream.parseErrors.length === 1 ? "" : "s"} and kept going.
                     </p>
                   ) : null}
                   {phase === "done" ? (
-                    <p className="mt-4 flex items-center gap-2 text-xs text-cyan-200">
+                    <p className="mt-5 flex items-center gap-2 text-xs leading-5 text-cyan-200">
                       <CheckCircle2 className="size-3.5" />
-                      Day 4 done-when: wheel, archetype cards, and dissonance alerts all render
-                      from streamed JSON.
+                      {stream.actionItems
+                        ? "Day 5 done-when: analysis paused, you approved, recommendations rendered."
+                        : "Turn finished without action_items. If you declined, that is expected."}
                     </p>
                   ) : null}
-                  {error ? (
-                    <p className="mt-4 text-sm text-rose-300">{error}</p>
-                  ) : null}
+                  {error ? <p className="mt-4 text-sm leading-6 text-rose-300">{error}</p> : null}
                 </CardContent>
               </Card>
             </div>
@@ -610,19 +803,19 @@ export function ResonanceApp() {
         </section>
 
         <aside className="min-h-[28rem]">
-          <Card className="flex h-full flex-col border-cyan-400/10 bg-card/80">
-            <CardHeader className="border-b border-border/60">
-              <CardTitle className="text-base">TrueForge transcript</CardTitle>
-              <CardDescription>
-                This is the harness loop, not a chatbot wrapper. Tool calls and subagents
-                show up here.
+          <Card className="flex h-full flex-col border-cyan-400/15 bg-card/85">
+            <CardHeader className="border-b border-cyan-400/10">
+              <CardTitle className="text-lg tracking-tight">TrueForge transcript</CardTitle>
+              <CardDescription className="leading-6">
+                This is the harness loop, not a chatbot wrapper. Tool calls, the HITL pause,
+                and subagents show up here.
               </CardDescription>
             </CardHeader>
             <CardContent className="min-h-0 flex-1 p-0">
-              <ScrollArea className="h-[32rem] px-4 py-3">
+              <ScrollArea className="h-[32rem] px-4 py-4">
                 <div className="space-y-3">
                   {transcript.length === 0 && !assistant ? (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm leading-6 text-muted-foreground">
                       Waiting for a run. After you click excavate, session create → turn
                       stream events land here.
                     </p>
@@ -631,10 +824,10 @@ export function ResonanceApp() {
                     <div
                       key={item.id}
                       className={cn(
-                        "rounded-lg px-3 py-2 text-xs leading-5",
+                        "rounded-lg px-3 py-2.5 text-xs leading-5",
                         item.kind === "user" && "bg-cyan-400/10 text-cyan-50",
                         item.kind === "status" && "bg-muted/50 text-muted-foreground",
-                        item.kind === "tool" && "bg-orange-400/10 text-orange-100",
+                        item.kind === "tool" && "bg-orange-400/12 text-orange-100",
                         item.kind === "subagent" && "bg-violet-400/10 text-violet-100",
                         item.kind === "error" && "bg-rose-400/10 text-rose-100",
                       )}
@@ -646,7 +839,7 @@ export function ResonanceApp() {
                     </div>
                   ))}
                   {assistant ? (
-                    <div className="rounded-lg bg-foreground/5 px-3 py-2 text-xs leading-5">
+                    <div className="rounded-lg bg-foreground/5 px-3 py-2.5 text-xs leading-5">
                       <p className="mb-1 font-mono text-[10px] tracking-wide text-cyan-300 uppercase">
                         assistant
                       </p>
@@ -662,17 +855,56 @@ export function ResonanceApp() {
           </Card>
         </aside>
       </main>
+
+      <ApprovalModal
+        open={phase === "awaiting_approval"}
+        message={
+          pendingQuestion?.question ??
+          stream.approval?.message ??
+          "Approve generation of product-roadmap recommendations."
+        }
+        hiddenAskCount={
+          stream.approval?.hidden_ask_count ?? stream.analysis?.hidden_asks.length ?? 0
+        }
+        hiddenAskTitles={stream.analysis?.hidden_asks.map((ask) => ask.title) ?? []}
+        ready={Boolean(pendingQuestion?.toolCallId)}
+        busy={decisionBusy}
+        onApprove={() => void decide("Approved")}
+        onDecline={() => void decide("Decline")}
+      />
     </div>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({
+  label,
+  value,
+  accent = false,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
   return (
-    <div className="rounded-xl border border-cyan-400/10 bg-card/60 px-4 py-3">
-      <p className="font-mono text-[10px] tracking-[0.18em] text-muted-foreground uppercase">
+    <div
+      className={cn(
+        "rounded-xl border bg-card/70 px-4 py-3.5",
+        accent
+          ? "border-orange-400/30 shadow-[0_0_24px_rgba(251,146,60,0.12)]"
+          : "border-cyan-400/15",
+      )}
+    >
+      <p className="font-mono text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
         {label}
       </p>
-      <p className="mt-1 truncate font-mono text-sm text-cyan-100">{value}</p>
+      <p
+        className={cn(
+          "mt-1.5 truncate font-mono text-sm tabular-nums",
+          accent ? "text-orange-100" : "text-cyan-100",
+        )}
+      >
+        {value}
+      </p>
     </div>
   );
 }

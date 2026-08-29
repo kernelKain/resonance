@@ -39,11 +39,12 @@ function EmotionTick({ payload, x = 0, y = 0, textAnchor = "middle" }: TickProps
       y={y}
       textAnchor={textAnchor}
       fill={color}
-      fontSize={12}
-      fontFamily="var(--font-geist-sans), ui-sans-serif, system-ui"
-      letterSpacing="0.04em"
+      fontSize={11}
+      fontFamily="var(--font-geist-mono), ui-monospace, monospace"
+      letterSpacing="0.08em"
+      fontWeight={600}
     >
-      {label}
+      {label.toUpperCase()}
     </text>
   );
 }
@@ -68,27 +69,27 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
       : null;
 
   return (
-    <Card className="border-cyan-400/10 bg-card/70">
-      <CardHeader>
-        <CardTitle className="text-base tracking-tight">Plutchik emotion wheel</CardTitle>
-        <CardDescription>
+    <Card className="border-cyan-400/20 bg-card/80 shadow-[0_0_60px_rgba(8,145,178,0.08)]">
+      <CardHeader className="gap-2">
+        <CardTitle className="text-lg tracking-tight">Plutchik emotion wheel</CardTitle>
+        <CardDescription className="leading-6">
           {scores
             ? `Eight-dimension profile from ${source}. Dominant: ${dominant ? EMOTION_LABELS[dominant] : "—"}.`
             : "Waiting for the first resonance-data fence. The polygon appears as soon as reviews are scored."}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_180px]">
-          <div className="h-[360px] w-full sm:h-[420px]">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_11.5rem]">
+          <div className="h-[320px] w-full sm:h-[400px]">
             {isClient && scores ? (
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={points} cx="50%" cy="50%" outerRadius="72%">
-                  <PolarGrid stroke="rgba(103,232,249,0.18)" />
+                  <PolarGrid stroke="rgba(34,211,238,0.22)" />
                   <PolarAngleAxis dataKey="axis" tick={<EmotionTick />} tickLine={false} />
                   <PolarRadiusAxis
                     domain={[0, 1]}
                     tickCount={5}
-                    tick={{ fill: "rgba(148,163,184,0.75)", fontSize: 10 }}
+                    tick={{ fill: "rgba(148,163,184,0.7)", fontSize: 10 }}
                     axisLine={false}
                   />
                   <Radar
@@ -96,16 +97,16 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
                     dataKey="value"
                     stroke="#67e8f9"
                     fill="#22d3ee"
-                    fillOpacity={0.35}
-                    strokeWidth={2}
+                    fillOpacity={0.32}
+                    strokeWidth={2.4}
                     isAnimationActive
                     animationDuration={700}
                   />
                 </RadarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-cyan-400/20 bg-background/30">
-                <p className="font-mono text-xs tracking-[0.18em] text-muted-foreground uppercase">
+              <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-cyan-400/25 bg-background/40">
+                <p className="font-mono text-[11px] tracking-[0.22em] text-cyan-200/70 uppercase">
                   Awaiting Plutchik vectors
                 </p>
               </div>
@@ -130,8 +131,9 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
                 <li
                   key={key}
                   className={cn(
-                    "rounded-lg border border-border/60 px-2.5 py-2",
-                    dominant === key && "border-cyan-400/40 bg-cyan-400/5",
+                    "rounded-lg border border-border/70 px-2.5 py-2",
+                    dominant === key &&
+                      "border-cyan-400/50 bg-cyan-400/10 shadow-[inset_0_0_20px_rgba(34,211,238,0.08)]",
                   )}
                 >
                   <p className="flex items-center gap-2 font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
@@ -141,7 +143,7 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
                     />
                     {EMOTION_LABELS[key]}
                   </p>
-                  <p className="mt-1 font-mono text-sm text-cyan-100">
+                  <p className="mt-1 font-mono text-sm tabular-nums text-cyan-100">
                     {scores ? value.toFixed(2) : "—"}
                   </p>
                 </li>

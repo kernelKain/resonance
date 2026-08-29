@@ -1,20 +1,21 @@
 import { TRUEFORGE_BASE_URL } from "@/lib/config";
+import { buildTurnInput, type TurnRequest } from "@/lib/trueforge-turn";
 
 export const runtime = "nodejs";
 export const maxDuration = 600;
 
-type TurnBody = {
-  sessionId?: string;
-  message?: string;
-};
-
 export async function POST(request: Request) {
-  const body = (await request.json()) as TurnBody;
-  if (!body.sessionId || !body.message?.trim()) {
-    return Response.json(
-      { error: "sessionId and message are required." },
-      { status: 400 },
-    );
+  const body = (await request.json()) as TurnRequest;
+  if (!body.sessionId) {
+    return Response.json({ error: "sessionId is required." }, { status: 400 });
+  }
+
+  let input;
+  try {
+    input = buildTurnInput(body);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Invalid turn input.";
+    return Response.json({ error: message }, { status: 400 });
   }
 
   const upstream = await fetch(
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         stream: true,
-        input: [{ type: "user.message", content: body.message }],
+        input,
       }),
     },
   );
