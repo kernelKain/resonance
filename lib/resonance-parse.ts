@@ -69,6 +69,23 @@ function sliceBalancedObject(text: string, start: number): string | null {
   return null;
 }
 
+function isUsablePayload(parsed: ResonancePayload): boolean {
+  switch (parsed.type) {
+    case "scored_reviews":
+      return Array.isArray(parsed.reviews) && typeof parsed.total_reviews === "number";
+    case "cluster_results":
+      return Array.isArray(parsed.clusters) && typeof parsed.num_clusters === "number";
+    case "analysis_result":
+      return Array.isArray(parsed.archetypes) && Array.isArray(parsed.hidden_asks);
+    case "approval_request":
+      return typeof parsed.message === "string" && parsed.message.length > 0;
+    case "action_items":
+      return Array.isArray(parsed.items);
+    default:
+      return false;
+  }
+}
+
 function tryParseObject(text: string): ResonancePayload | null {
   const trimmed = text.trim();
   if (!trimmed) return null;
@@ -84,7 +101,8 @@ function tryParseObject(text: string): ResonancePayload | null {
     try {
       const parsed = JSON.parse(candidate) as ResonancePayload;
       if (parsed && typeof parsed === "object" && "type" in parsed) {
-        return unwrap(parsed);
+        const unwrapped = unwrap(parsed);
+        if (isUsablePayload(unwrapped)) return unwrapped;
       }
     } catch {
       // Partial or malformed JSON — ignore this candidate.
@@ -132,7 +150,7 @@ function extractFencedPayloads(raw: string): {
     if (parsed) {
       payloads.push(parsed);
     } else {
-      errors.push(`fence ${fenceCount}: JSON.parse failed`);
+      errors.push(`fence ${fenceCount}: JSON.parse failed or payload failed shape checks`);
     }
   }
 
@@ -229,7 +247,9 @@ export function statusTextFromStream(
     );
   }
   if (stream.analysis) {
-    return `Found ${stream.analysis.archetypes.length} customer segments and ${stream.analysis.hidden_asks.length} unspoken needs.`;
+    const segments = stream.analysis.archetypes?.length ?? 0;
+    const asks = stream.analysis.hidden_asks?.length ?? 0;
+    return `Found ${segments} customer segments and ${asks} unspoken needs.`;
   }
   if (stream.clustered) {
     return `Identified ${stream.clustered.num_clusters} distinct customer segments.`;

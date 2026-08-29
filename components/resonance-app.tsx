@@ -37,7 +37,7 @@ export function ResonanceApp() {
   }, []);
 
   const health = useHealthPolling(5000);
-  
+
   const state = useResonanceState();
   const {
     productName,
@@ -119,13 +119,13 @@ export function ResonanceApp() {
         </div>
       </header>
 
-      <main 
+      <main
         className={cn(
           "relative z-10 mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 sm:py-10",
           devMode ? "lg:grid-cols-[minmax(0,1fr)_22rem]" : "lg:grid-cols-1"
         )}
       >
-        <section className="min-w-0">
+        <section className="min-w-0" id="main-content">
           <AnimatePresence mode="wait">
           {!showWorkbench ? (
             <motion.div
@@ -201,11 +201,11 @@ export function ResonanceApp() {
               <div className="grid gap-3 sm:grid-cols-3">
                 <Metric
                   label="Segments"
-                  value={stream.analysis ? String(stream.analysis.archetypes.length) : "—"}
+                  value={stream.analysis ? String(stream.analysis.archetypes?.length ?? 0) : "—"}
                 />
                 <Metric
                   label="Unspoken Needs"
-                  value={stream.analysis ? String(stream.analysis.hidden_asks.length) : "—"}
+                  value={stream.analysis ? String(stream.analysis.hidden_asks?.length ?? 0) : "—"}
                 />
                 <Metric
                   label="Recommendations"
@@ -249,9 +249,9 @@ export function ResonanceApp() {
           "Approve generation of product-roadmap recommendations."
         }
         hiddenAskCount={
-          stream.approval?.hidden_ask_count ?? stream.analysis?.hidden_asks.length ?? 0
+          stream.approval?.hidden_ask_count ?? stream.analysis?.hidden_asks?.length ?? 0
         }
-        hiddenAskTitles={stream.analysis?.hidden_asks.map((ask) => ask.title) ?? []}
+        hiddenAskTitles={stream.analysis?.hidden_asks?.map((ask) => ask.title) ?? []}
         ready={Boolean(pendingQuestion?.toolCallId)}
         busy={decisionBusy}
         onApprove={() => void decide("Approved")}

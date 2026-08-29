@@ -138,7 +138,7 @@ export function UploadCard({
             Run Analysis
           </Button>
           <Button size="lg" variant="outline" className="flex-1" onClick={onLoadSample}>
-            Try Sample Data
+            Load demo dataset
           </Button>
         </div>
 
