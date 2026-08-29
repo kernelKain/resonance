@@ -49,26 +49,26 @@ async function tf(pathname, init = {}) {
   return body;
 }
 
-function geminiModels() {
+function openRouterModels() {
   return [
     {
-      model_id: "gemini-3.1-pro-preview",
-      name: "gemini-3-1-pro-preview",
-      properties: { context_length: 1048576, max_output_tokens: 65536 },
+      model_id: "nvidia/nemotron-3-ultra",
+      name: "nemotron-3-ultra",
+      properties: { context_length: 1000000, max_output_tokens: 16384 },
     },
     {
-      model_id: "gemini-3.6-flash",
-      name: "gemini-3-6-flash",
-      properties: { context_length: 1048576, max_output_tokens: 65536 },
+      model_id: "glm-5.2",
+      name: "glm-5-2",
+      properties: { context_length: 256000, max_output_tokens: 8192 },
     },
   ];
 }
 
 async function upsertModelProvider() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey || apiKey === "your_actual_key_here") {
     console.log(
-      "• Skipping Google Gemini provider (no GEMINI_API_KEY). Add it in TrueForge Settings → Models, or put it in .env.local and re-run bootstrap.",
+      "• Skipping OpenRouter provider (no valid OPENROUTER_API_KEY). Add it in TrueForge Settings → Models, or put it in .env.local and re-run bootstrap.",
     );
     return;
   }
@@ -77,13 +77,13 @@ async function upsertModelProvider() {
     method: "PUT",
     body: JSON.stringify({
       manifest: {
-        type: "google-gemini",
+        type: "openrouter",
         auth: { api_key: apiKey },
-        models: geminiModels(),
+        models: openRouterModels(),
       },
     }),
   });
-  console.log("• Model provider google-gemini configured.");
+  console.log("• Model provider openrouter configured.");
 }
 
 async function upsertSandboxProvider() {
