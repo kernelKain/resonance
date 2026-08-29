@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   emptyResonanceStream,
   extractResonanceStream,
@@ -109,6 +109,56 @@ export function useResonanceState() {
   const replayCancelRef = useRef(false);
   const flushRafRef = useRef<number | null>(null);
 
+  // ── Session persistence ──────────────────────────────────────────────────────
+  // On mount: rehydrate state from sessionStorage so a page refresh doesn't
+  // erase the analysis results. File objects cannot be serialized so only
+  // metadata and the assistant output are restored.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("resonance_session");
+      if (!raw) return;
+      const saved = JSON.parse(raw) as {
+        productName?: string;
+        phase?: ResonancePhase;
+        assistant?: string;
+        uploadMeta?: { filePath: string; rowCount: number } | null;
+      };
+      if (saved.productName) setProductName(saved.productName);
+      if (saved.uploadMeta) setUploadMeta(saved.uploadMeta);
+      if (saved.assistant && saved.phase && saved.phase !== "idle") {
+        assistantRef.current = saved.assistant;
+        setAssistant(saved.assistant);
+        setStream(extractResonanceStream(saved.assistant));
+        // Restore phase as "done" if it was done or error so the workbench stays visible;
+        // running/awaiting states cannot be safely restored.
+        setPhase(
+          saved.phase === "done" || saved.phase === "error" ? saved.phase : "done",
+        );
+      }
+    } catch {
+      // Silently ignore malformed session data
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** Persist current state snapshot to sessionStorage. */
+  function saveSession(
+    name: string,
+    currentPhase: ResonancePhase,
+    assistantText: string,
+    meta: { filePath: string; rowCount: number } | null,
+  ) {
+    try {
+      sessionStorage.setItem(
+        "resonance_session",
+        JSON.stringify({ productName: name, phase: currentPhase, assistant: assistantText, uploadMeta: meta }),
+      );
+    } catch {
+      // Storage quota exceeded or unavailable — fail silently
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────────
+
   function cancelFlush() {
     if (flushRafRef.current != null) {
       window.cancelAnimationFrame(flushRafRef.current);
@@ -120,6 +170,8 @@ export function useResonanceState() {
     cancelFlush();
     setAssistant(assistantRef.current);
     setStream(extractResonanceStream(assistantRef.current));
+    // Persist after every flush so a refresh restores the latest state
+    saveSession(productName, phase, assistantRef.current, uploadMeta);
   }
 
   function resetStream() {
@@ -132,6 +184,8 @@ export function useResonanceState() {
     setReplayTail("");
     setSessionId(null);
     setDecisionBusy(false);
+    // Clear saved session on a fresh run
+    try { sessionStorage.removeItem("resonance_session"); } catch { /* ignore */ }
   }
 
   function ingestAssistantChunk(piece: string) {
@@ -311,6 +365,7 @@ export function useResonanceState() {
 
     setPendingQuestion(null);
     setPhase("done");
+    saveSession(productName, "done", assistantRef.current, uploadMeta);
   }
 
   async function runExcavation() {

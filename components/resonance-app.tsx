@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Terminal, Activity } from "lucide-react";
 
 import { ApprovalModal } from "./approval-modal";
 import { InsightPanel } from "./insight-panel";
@@ -106,7 +107,7 @@ export function ResonanceApp() {
               </h1>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             {devMode && (
               <>
                 <HealthDot ok={Boolean(health?.trueforge)} label="Analysis Engine" />
@@ -115,6 +116,19 @@ export function ResonanceApp() {
               </>
             )}
             <Badge className="font-mono text-[11px] tracking-wide uppercase">v0.1</Badge>
+            <button
+              onClick={() => setDevMode((prev) => !prev)}
+              title="Toggle developer mode (Ctrl+D)"
+              className={cn(
+                "flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 font-mono text-[10px] tracking-wider uppercase transition-all duration-150",
+                devMode
+                  ? "border-cyan-400/50 bg-cyan-400/10 text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.2)]"
+                  : "border-border/50 text-muted-foreground hover:border-cyan-400/30 hover:text-cyan-300"
+              )}
+            >
+              <Terminal className="size-3" />
+              Dev
+            </button>
           </div>
         </div>
       </header>
@@ -228,6 +242,7 @@ export function ResonanceApp() {
                   assistant={assistant}
                   error={error}
                   devMode={devMode}
+                  transcript={transcript}
                 />
               )}
             </div>
