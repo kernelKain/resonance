@@ -251,7 +251,7 @@ def main(argv: list[str] | None = None) -> int:
         seed=args.seed,
     )
 
-    text = json.dumps(result, indent=2)
+    text = json.dumps(result, separators=(",", ":"))
     if args.output:
         output_path = Path(args.output)
         output_path.parent.mkdir(parents=True, exist_ok=True)

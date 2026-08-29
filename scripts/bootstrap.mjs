@@ -3,12 +3,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const TRUEFORGE = process.env.TRUEFORGE_BASE_URL ?? "http://127.0.0.1:8790";
-const AGENT_NAME = process.env.TRUEFORGE_AGENT_NAME ?? "resonance";
-const MCP_URL = process.env.MCP_URL ?? "http://127.0.0.1:8792/mcp";
-const MODEL_FQN =
-  process.env.TRUEFORGE_MODEL ?? "openrouter/minimax-minimax-m-3-free";
-
 function loadEnvFiles() {
   for (const filename of [".env", ".env.local"]) {
     const fullPath = path.join(ROOT, filename);
@@ -20,12 +14,18 @@ function loadEnvFiles() {
       if (idx === -1) continue;
       const key = trimmed.slice(0, idx).trim();
       const value = trimmed.slice(idx + 1).trim().replace(/^['"]|['"]$/g, "");
-      if (!process.env[key]) process.env[key] = value;
+      if (process.env[key] === undefined) process.env[key] = value;
     }
   }
 }
 
 loadEnvFiles();
+
+const TRUEFORGE = process.env.TRUEFORGE_BASE_URL ?? "http://127.0.0.1:8790";
+const AGENT_NAME = process.env.TRUEFORGE_AGENT_NAME ?? "resonance";
+const MCP_URL = process.env.MCP_URL ?? "http://127.0.0.1:8792/mcp";
+const MODEL_FQN =
+  process.env.TRUEFORGE_MODEL ?? "openrouter/minimax-minimax-m-3-free";
 
 async function tf(pathname, init = {}) {
   const response = await fetch(`${TRUEFORGE}${pathname}`, {
