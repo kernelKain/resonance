@@ -12,8 +12,10 @@ import {
   UploadCloud,
 } from "lucide-react";
 
-import { ApprovalModal } from "@/components/approval-modal";
-import { InsightPanel } from "@/components/insight-panel";
+import { AnalysisProgress } from "./analysis-progress";
+import { ApprovalModal } from "./approval-modal";
+import { CountUp } from "./count-up";
+import { InsightPanel } from "./insight-panel";
 import { PlutchikMark } from "@/components/plutchik-mark";
 import { PlutchikWheel } from "@/components/plutchik-wheel";
 import { Badge } from "@/components/ui/badge";
@@ -569,7 +571,7 @@ export function ResonanceApp() {
             <HealthDot ok={Boolean(health?.trueforge)} label="Analysis Engine" />
             <HealthDot ok={Boolean(health?.filesystemMcp)} label="File System" />
             <HealthDot ok={Boolean(health?.agent)} label="Agent" />
-            <Badge className="font-mono text-[10px] tracking-wide uppercase">v0.1</Badge>
+            <Badge className="font-mono text-[11px] tracking-wide uppercase">v0.1</Badge>
           </div>
         </div>
       </header>
@@ -585,7 +587,7 @@ export function ResonanceApp() {
               exit={{ opacity: 0, scale: 0.96, y: 12 }}
               transition={{ duration: 0.15, ease: "easeOut" }}
             >
-            <Card className="mx-auto max-w-xl border-cyan-400/20 bg-card/85 shadow-[0_0_90px_rgba(8,145,178,0.12)]">
+            <Card className="noise-texture glass-surface mx-auto max-w-xl border-cyan-400/20 bg-card/85 shadow-[0_0_90px_rgba(8,145,178,0.12)] ring-1 ring-white/[0.04] ring-inset">
               <CardHeader className="gap-3 px-6 pt-6">
                 <CardTitle className="text-3xl tracking-tight">
                   Analyze Customer Reviews
@@ -609,7 +611,7 @@ export function ResonanceApp() {
                   />
                 </div>
 
-                <div
+                <motion.div
                   onDragOver={(event) => {
                     event.preventDefault();
                     setDragOver(true);
@@ -621,15 +623,23 @@ export function ResonanceApp() {
                     const dropped = event.dataTransfer.files[0];
                     if (dropped) setFile(dropped);
                   }}
+                  animate={dragOver ? { scale: 1.02 } : { scale: 1 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
                   className={cn(
-                    "rounded-xl border border-dashed px-4 py-12 text-center transition-colors",
+                    "rounded-xl border-2 border-dashed px-4 py-12 text-center transition-all duration-300",
                     dragOver
-                      ? "border-cyan-300 bg-cyan-400/10 shadow-[inset_0_0_40px_rgba(34,211,238,0.12)]"
-                      : "border-cyan-400/25 bg-background/40",
+                      ? "border-cyan-300 bg-cyan-400/10 shadow-[inset_0_0_40px_rgba(34,211,238,0.12),0_0_30px_rgba(34,211,238,0.1)]"
+                      : file
+                        ? "border-cyan-400/40 bg-cyan-400/5"
+                        : "border-cyan-400/25 bg-background/40 hover:border-cyan-400/40 hover:bg-background/60",
                   )}
                 >
-                  <UploadCloud className="mx-auto mb-3 size-8 text-cyan-300" />
-                  <p className="text-sm font-medium">Drop a CSV or click to select</p>
+                  {file ? (
+                    <CheckCircle2 className="mx-auto mb-3 size-8 text-cyan-300" />
+                  ) : (
+                    <UploadCloud className="mx-auto mb-3 size-8 text-cyan-300" />
+                  )}
+                  <p className="text-sm font-medium">{file ? "File selected" : "Drop a CSV or click to select"}</p>
                   <p className="mt-2 text-xs leading-5 text-muted-foreground">
                     Required column: <code className="font-mono text-cyan-200">review_text</code>.
                     Optional: rating, date, author.
@@ -646,7 +656,7 @@ export function ResonanceApp() {
                       {file.name}
                     </p>
                   ) : null}
-                </div>
+                </motion.div>
 
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Button
@@ -728,7 +738,7 @@ export function ResonanceApp() {
                   <p className="font-mono text-[11px] tracking-[0.24em] text-cyan-300 uppercase">
                     Live analysis
                   </p>
-                  <h2 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+                  <h2 className="heading-gradient mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
                     {productName}
                   </h2>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
@@ -780,7 +790,7 @@ export function ResonanceApp() {
                 <InsightPanel stream={stream} />
               </div>
 
-              <Card className="border-cyan-400/15 bg-card/80">
+              <Card className="noise-texture glass-surface border-cyan-400/15 bg-card/80 ring-1 ring-white/[0.04] ring-inset">
                 <CardHeader className="gap-2">
                   <CardTitle className="flex items-center gap-2 text-lg tracking-tight">
                     <Radio className="size-4 text-cyan-300" />
@@ -796,13 +806,7 @@ export function ResonanceApp() {
                       {assistant}
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      {["Researching product context", "Reading CSV via filesystem MCP", "Scoring reviews"].map(
-                        (line) => (
-                          <div key={line} className="h-4 animate-pulse rounded bg-muted/70" />
-                        ),
-                      )}
-                    </div>
+                    <AnalysisProgress stream={stream} phase={phase} />
                   )}
                   {stream.parseErrors.length ? (
                     <p className="mt-4 text-xs leading-5 text-amber-200">
@@ -828,7 +832,7 @@ export function ResonanceApp() {
         </section>
 
         <aside className="min-h-[28rem]">
-          <Card className="flex h-full flex-col border-cyan-400/15 bg-card/85">
+          <Card className="noise-texture glass-surface flex h-full flex-col border-cyan-400/15 bg-card/85 ring-1 ring-white/[0.04] ring-inset">
             <CardHeader className="border-b border-cyan-400/10">
               <CardTitle className="text-lg tracking-tight">Activity Log</CardTitle>
               <CardDescription className="leading-6">
@@ -855,7 +859,7 @@ export function ResonanceApp() {
                         item.kind === "error" && "bg-rose-400/10 text-rose-100",
                       )}
                     >
-                      <p className="mb-1 font-mono text-[10px] tracking-wide uppercase opacity-70">
+                      <p className="mb-1 font-mono text-[11px] tracking-wide uppercase opacity-70">
                         {item.kind}
                       </p>
                       <p className="whitespace-pre-wrap">{item.text}</p>
@@ -863,7 +867,7 @@ export function ResonanceApp() {
                   ))}
                   {assistant ? (
                     <div className="rounded-lg bg-foreground/5 px-3 py-2.5 text-xs leading-5">
-                      <p className="mb-1 font-mono text-[10px] tracking-wide text-cyan-300 uppercase">
+                      <p className="mb-1 font-mono text-[11px] tracking-wide text-cyan-300 uppercase">
                         assistant
                       </p>
                       <p className="whitespace-pre-wrap text-foreground/90">
@@ -917,7 +921,7 @@ function Metric({
           : "border-cyan-400/15",
       )}
     >
-      <p className="font-mono text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
+      <p className="font-mono text-[11px] tracking-[0.2em] text-muted-foreground uppercase">
         {label}
       </p>
       <p
@@ -926,7 +930,7 @@ function Metric({
           accent ? "text-orange-100" : "text-cyan-100",
         )}
       >
-        {value}
+        {Number.isNaN(Number(value)) || value === "—" ? value : <CountUp value={Number(value)} />}
       </p>
     </div>
   );

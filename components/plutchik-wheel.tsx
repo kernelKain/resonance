@@ -91,6 +91,19 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart data={points} cx="50%" cy="50%" outerRadius="72%">
+                    <defs>
+                      <linearGradient id="radarGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.5} />
+                        <stop offset="100%" stopColor="#0891b2" stopOpacity={0.3} />
+                      </linearGradient>
+                      <filter id="radarGlow">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feMerge>
+                          <feMergeNode in="blur" />
+                          <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                      </filter>
+                    </defs>
                     <PolarGrid stroke="rgba(34,211,238,0.22)" />
                     <PolarAngleAxis dataKey="axis" tick={<EmotionTick />} tickLine={false} />
                     <PolarRadiusAxis
@@ -103,8 +116,8 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
                       name="Plutchik"
                       dataKey="value"
                       stroke="#67e8f9"
-                      fill="#22d3ee"
-                      fillOpacity={0.32}
+                      fill="url(#radarGradient)"
+                      fillOpacity={0.45}
                       strokeWidth={2.4}
                       isAnimationActive
                       animationDuration={700}
@@ -146,8 +159,11 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
                 >
                   <p className="flex items-center gap-2 font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
                     <span
-                      className="size-2 rounded-full"
-                      style={{ background: EMOTION_COLORS[key] }}
+                      className={cn(
+                        "size-2 rounded-full",
+                        key === dominant && "shadow-[0_0_8px_currentColor] animate-pulse"
+                      )}
+                      style={{ background: EMOTION_COLORS[key], color: EMOTION_COLORS[key] }}
                     />
                     {EMOTION_LABELS[key]}
                   </p>

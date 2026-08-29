@@ -54,6 +54,14 @@
   --color-orange-300: oklch(0.84 0.16 55);
   --color-orange-400: oklch(0.76 0.18 50);
   --color-orange-500: oklch(0.68 0.18 48);
+  --color-emotion-joy: #f5d76e;
+  --color-emotion-trust: #5ee0a0;
+  --color-emotion-fear: #7dffb3;
+  --color-emotion-surprise: #67e8f9;
+  --color-emotion-sadness: #60a5fa;
+  --color-emotion-disgust: #c084fc;
+  --color-emotion-anger: #fb7185;
+  --color-emotion-anticipation: #fb923c;
 }
 
 :root {
@@ -178,4 +186,62 @@
   ::-webkit-scrollbar-thumb:hover {
     background: oklch(0.82 0.16 205 / 55%);
   }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.35 0.04 220) oklch(0.13 0.024 250);
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(34, 211, 238, 0.3); }
+  50% { box-shadow: 0 0 36px rgba(34, 211, 238, 0.55); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes marching-ants {
+  0% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -24; }
+}
+
+@keyframes gradient-border {
+  0%, 100% { border-color: oklch(0.82 0.16 205 / 40%); }
+  50% { border-color: oklch(0.76 0.18 50 / 40%); }
+}
+
+.glass-surface {
+  backdrop-filter: blur(24px) saturate(1.3);
+  -webkit-backdrop-filter: blur(24px) saturate(1.3);
+}
+
+.noise-texture {
+  position: relative;
+}
+
+.noise-texture::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  border-radius: inherit;
+}
+
+@media (pointer: coarse) {
+  [data-slot="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+.heading-gradient {
+  background: linear-gradient(135deg, oklch(0.92 0.08 205), oklch(0.88 0.13 205), oklch(0.92 0.08 205));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
