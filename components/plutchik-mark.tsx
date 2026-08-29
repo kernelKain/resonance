@@ -31,15 +31,17 @@ function buildArcPath(
   const s = startAngle + gapRad;
   const e = endAngle - gapRad;
 
-  const x1 = cx + outerR * Math.cos(s);
-  const y1 = cy + outerR * Math.sin(s);
-  const x2 = cx + outerR * Math.cos(e);
-  const y2 = cy + outerR * Math.sin(e);
+  const rnd = (val: number) => Number(val.toFixed(4));
 
-  const ix1 = cx + innerR * Math.cos(e);
-  const iy1 = cy + innerR * Math.sin(e);
-  const ix2 = cx + innerR * Math.cos(s);
-  const iy2 = cy + innerR * Math.sin(s);
+  const x1 = rnd(cx + outerR * Math.cos(s));
+  const y1 = rnd(cy + outerR * Math.sin(s));
+  const x2 = rnd(cx + outerR * Math.cos(e));
+  const y2 = rnd(cy + outerR * Math.sin(e));
+
+  const ix1 = rnd(cx + innerR * Math.cos(e));
+  const iy1 = rnd(cy + innerR * Math.sin(e));
+  const ix2 = rnd(cx + innerR * Math.cos(s));
+  const iy2 = rnd(cy + innerR * Math.sin(s));
 
   return `M ${x1} ${y1} A ${outerR} ${outerR} 0 0 1 ${x2} ${y2} L ${ix1} ${iy1} A ${innerR} ${innerR} 0 0 0 ${ix2} ${iy2} Z`;
 }
