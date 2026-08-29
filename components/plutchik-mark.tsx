@@ -17,12 +17,15 @@ export function PlutchikMark({ className }: { className?: string }) {
   const slice = (2 * Math.PI) / EMOTIONS.length;
 
   return (
-    <svg
-      viewBox="0 0 100 100"
-      className={className}
-      aria-hidden="true"
-    >
-      <circle cx={cx} cy={cy} r="48" fill="none" stroke="rgba(103,232,249,0.12)" strokeWidth="0.6" />
+    <svg viewBox="0 0 100 100" className={className} aria-hidden="true">
+      <circle
+        cx={cx}
+        cy={cy}
+        r="48"
+        fill="none"
+        stroke="rgba(34,211,238,0.35)"
+        strokeWidth="1.1"
+      />
       {EMOTIONS.map((emotion, index) => {
         const start = index * slice - Math.PI / 2;
         const end = start + slice;
@@ -40,13 +43,20 @@ export function PlutchikMark({ className }: { className?: string }) {
             key={emotion.name}
             d={d}
             fill={emotion.color}
-            opacity={0.85}
-            stroke="rgba(2,6,23,0.65)"
+            opacity={0.92}
+            stroke="rgba(2,6,23,0.7)"
             strokeWidth="0.7"
           />
         );
       })}
-      <circle cx={cx} cy={cy} r="14" fill="#020617" stroke="rgba(103,232,249,0.4)" strokeWidth="0.8" />
+      <circle
+        cx={cx}
+        cy={cy}
+        r="14"
+        fill="#020617"
+        stroke="rgba(34,211,238,0.75)"
+        strokeWidth="1.2"
+      />
     </svg>
   );
 }

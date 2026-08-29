@@ -150,10 +150,10 @@ function HealthDot({ ok, label }: { ok: boolean; label: string }) {
       <span
         className={cn(
           "size-1.5 rounded-full",
-          ok ? "bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)]" : "bg-zinc-600",
+          ok ? "bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.95)]" : "bg-zinc-600",
         )}
       />
-      <span className={ok ? "text-foreground" : undefined}>{label}</span>
+      <span className={ok ? "text-cyan-100" : undefined}>{label}</span>
     </div>
   );
 }
@@ -548,48 +548,46 @@ export function ResonanceApp() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),transparent_42%),radial-gradient(circle_at_80%_20%,rgba(251,146,60,0.08),transparent_30%)]" />
-      <div className="pointer-events-none absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(148,163,184,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.06)_1px,transparent_1px)] [background-size:48px_48px]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.16),transparent_46%),radial-gradient(circle_at_88%_12%,rgba(251,146,60,0.14),transparent_32%)]" />
+      <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(34,211,238,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.07)_1px,transparent_1px)] [background-size:52px_52px]" />
 
-      <header className="relative z-10 border-b border-cyan-400/10 bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <PlutchikMark className="size-10" />
+      <header className="relative z-10 border-b border-cyan-400/15 bg-background/75 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="flex items-center gap-3.5">
+            <PlutchikMark className="size-11 drop-shadow-[0_0_16px_rgba(34,211,238,0.45)]" />
             <div>
-              <p className="font-mono text-[11px] tracking-[0.28em] text-cyan-300/80 uppercase">
+              <p className="font-mono text-[11px] tracking-[0.32em] text-cyan-300 uppercase">
                 Resonance
               </p>
-              <h1 className="text-lg font-semibold tracking-tight">
+              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
                 Customer Emotion Archaeology
               </h1>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <HealthDot ok={Boolean(health?.trueforge)} label="TrueForge :8790" />
             <HealthDot ok={Boolean(health?.filesystemMcp)} label="Filesystem MCP" />
             <HealthDot ok={Boolean(health?.agent)} label="Agent: resonance" />
-            <Badge variant="secondary" className="font-mono text-[10px] tracking-wide uppercase">
-              Day 5 HITL
-            </Badge>
+            <Badge className="font-mono text-[10px] tracking-wide uppercase">Day 5 HITL</Badge>
           </div>
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto grid max-w-7xl gap-6 px-4 py-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <main className="relative z-10 mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <section className="min-w-0">
           {!showWorkbench ? (
-            <Card className="mx-auto max-w-xl border-cyan-400/15 bg-card/80 shadow-[0_0_80px_rgba(8,145,178,0.08)]">
-              <CardHeader>
-                <CardTitle className="text-2xl tracking-tight">
+            <Card className="mx-auto max-w-xl border-cyan-400/20 bg-card/85 shadow-[0_0_90px_rgba(8,145,178,0.12)]">
+              <CardHeader className="gap-3 px-6 pt-6">
+                <CardTitle className="text-3xl tracking-tight">
                   Run a psychological excavation
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-[0.95rem] leading-7">
                   Standard sentiment tools flatten reviews into three buckets. Resonance reads
                   the file through TrueForge MCP, then pauses for your approval before any
                   product-roadmap recommendations.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-5">
+              <CardContent className="space-y-6 px-6 pb-6">
                 <div className="space-y-2">
                   <label className="text-sm font-medium" htmlFor="product">
                     Product / brand
@@ -599,7 +597,7 @@ export function ResonanceApp() {
                     value={productName}
                     onChange={(event) => setProductName(event.target.value)}
                     placeholder="Linear"
-                    className="h-10 bg-background/60"
+                    className="h-11 bg-background/60 text-base"
                   />
                 </div>
 
@@ -616,26 +614,26 @@ export function ResonanceApp() {
                     if (dropped) setFile(dropped);
                   }}
                   className={cn(
-                    "rounded-xl border border-dashed px-4 py-10 text-center transition-colors",
+                    "rounded-xl border border-dashed px-4 py-12 text-center transition-colors",
                     dragOver
-                      ? "border-cyan-300 bg-cyan-400/10"
-                      : "border-border bg-background/40",
+                      ? "border-cyan-300 bg-cyan-400/10 shadow-[inset_0_0_40px_rgba(34,211,238,0.12)]"
+                      : "border-cyan-400/25 bg-background/40",
                   )}
                 >
                   <UploadCloud className="mx-auto mb-3 size-8 text-cyan-300" />
                   <p className="text-sm font-medium">Drop a CSV or click to select</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Required column: <code className="font-mono">review_text</code>. Optional:
-                    rating, date, author.
+                  <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                    Required column: <code className="font-mono text-cyan-200">review_text</code>.
+                    Optional: rating, date, author.
                   </p>
                   <input
-                    className="mt-4 block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-cyan-400 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-950"
+                    className="mt-5 block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-cyan-400 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-950"
                     type="file"
                     accept=".csv,text/csv"
                     onChange={(event) => setFile(event.target.files?.[0] ?? null)}
                   />
                   {file ? (
-                    <p className="mt-3 flex items-center justify-center gap-2 text-xs text-cyan-100">
+                    <p className="mt-4 flex items-center justify-center gap-2 text-xs text-cyan-100">
                       <FileSpreadsheet className="size-3.5" />
                       {file.name}
                     </p>
@@ -645,7 +643,7 @@ export function ResonanceApp() {
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Button
                     size="lg"
-                    className="flex-1 bg-cyan-400 text-slate-950 hover:bg-cyan-300"
+                    className="flex-1"
                     disabled={!canRun || phase === "uploading"}
                     onClick={() => void runExcavation()}
                   >
@@ -684,15 +682,15 @@ export function ResonanceApp() {
                 </div>
 
                 {!harnessReady ? (
-                  <p className="rounded-lg border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-xs text-amber-100">
+                  <p className="rounded-lg border border-amber-400/25 bg-amber-400/8 px-3.5 py-3 text-xs leading-5 text-amber-100">
                     Harness is not fully up. Replay HITL fixture works without it. For a live
                     pause, start TrueForge on :8790, the filesystem MCP, then run{" "}
-                    <code className="font-mono">npm run bootstrap</code>.
+                    <code className="font-mono text-cyan-200">npm run bootstrap</code>.
                   </p>
                 ) : null}
 
                 {error ? (
-                  <p className="flex items-start gap-2 text-sm text-rose-300">
+                  <p className="flex items-start gap-2 text-sm leading-6 text-rose-300">
                     <AlertTriangle className="mt-0.5 size-4 shrink-0" />
                     {error}
                   </p>
@@ -700,14 +698,18 @@ export function ResonanceApp() {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <div>
-                  <p className="font-mono text-[11px] tracking-[0.2em] text-cyan-300/80 uppercase">
+            <div className="space-y-5">
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="font-mono text-[11px] tracking-[0.24em] text-cyan-300 uppercase">
                     Live excavation
                   </p>
-                  <h2 className="text-2xl font-semibold tracking-tight">{productName}</h2>
-                  <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{statusLine}</p>
+                  <h2 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+                    {productName}
+                  </h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                    {statusLine}
+                  </p>
                 </div>
                 <Button
                   variant="outline"
@@ -720,11 +722,8 @@ export function ResonanceApp() {
                 </Button>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <Metric
-                  label="Reviews on disk"
-                  value={uploadMeta ? String(uploadMeta.rowCount) : "—"}
-                />
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <Metric label="Reviews on disk" value={uploadMeta ? String(uploadMeta.rowCount) : "—"} />
                 <Metric
                   label="Scored in state"
                   value={stream.scored ? String(stream.scored.total_reviews) : "—"}
@@ -736,7 +735,7 @@ export function ResonanceApp() {
                 <Metric label="Latest payload" value={parsedLabel} />
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-3">
                 <Metric
                   label="Archetypes"
                   value={stream.analysis ? String(stream.analysis.archetypes.length) : "—"}
@@ -748,22 +747,23 @@ export function ResonanceApp() {
                 <Metric
                   label="Recommendations"
                   value={stream.actionItems ? String(stream.actionItems.items.length) : "paused"}
+                  accent={Boolean(stream.actionItems)}
                 />
               </div>
 
-              <div className="grid gap-4 xl:grid-cols-2">
+              <div className="grid gap-5 xl:grid-cols-2">
                 <PlutchikWheel stream={stream} />
                 <InsightPanel stream={stream} />
               </div>
 
-              <Card className="border-cyan-400/10 bg-card/70">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
+              <Card className="border-cyan-400/15 bg-card/80">
+                <CardHeader className="gap-2">
+                  <CardTitle className="flex items-center gap-2 text-lg tracking-tight">
                     <Radio className="size-4 text-cyan-300" />
                     Agent output
                   </CardTitle>
-                  <CardDescription>
-                    SSE text is parsed into React state as each ```resonance-data fence closes.
+                  <CardDescription className="leading-6">
+                    SSE text is parsed into React state as each resonance-data fence closes.
                     The wheel and cards above read those payloads.
                   </CardDescription>
                 </CardHeader>
@@ -776,28 +776,26 @@ export function ResonanceApp() {
                     <div className="space-y-3">
                       {["Researching product context", "Reading CSV via filesystem MCP", "Scoring reviews"].map(
                         (line) => (
-                          <div key={line} className="h-4 animate-pulse rounded bg-muted/60" />
+                          <div key={line} className="h-4 animate-pulse rounded bg-muted/70" />
                         ),
                       )}
                     </div>
                   )}
                   {stream.parseErrors.length ? (
-                    <p className="mt-4 text-xs text-amber-200">
+                    <p className="mt-4 text-xs leading-5 text-amber-200">
                       Parser skipped {stream.parseErrors.length} malformed fence
                       {stream.parseErrors.length === 1 ? "" : "s"} and kept going.
                     </p>
                   ) : null}
                   {phase === "done" ? (
-                    <p className="mt-4 flex items-center gap-2 text-xs text-cyan-200">
+                    <p className="mt-5 flex items-center gap-2 text-xs leading-5 text-cyan-200">
                       <CheckCircle2 className="size-3.5" />
                       {stream.actionItems
                         ? "Day 5 done-when: analysis paused, you approved, recommendations rendered."
                         : "Turn finished without action_items. If you declined, that is expected."}
                     </p>
                   ) : null}
-                  {error ? (
-                    <p className="mt-4 text-sm text-rose-300">{error}</p>
-                  ) : null}
+                  {error ? <p className="mt-4 text-sm leading-6 text-rose-300">{error}</p> : null}
                 </CardContent>
               </Card>
             </div>
@@ -805,19 +803,19 @@ export function ResonanceApp() {
         </section>
 
         <aside className="min-h-[28rem]">
-          <Card className="flex h-full flex-col border-cyan-400/10 bg-card/80">
-            <CardHeader className="border-b border-border/60">
-              <CardTitle className="text-base">TrueForge transcript</CardTitle>
-              <CardDescription>
+          <Card className="flex h-full flex-col border-cyan-400/15 bg-card/85">
+            <CardHeader className="border-b border-cyan-400/10">
+              <CardTitle className="text-lg tracking-tight">TrueForge transcript</CardTitle>
+              <CardDescription className="leading-6">
                 This is the harness loop, not a chatbot wrapper. Tool calls, the HITL pause,
                 and subagents show up here.
               </CardDescription>
             </CardHeader>
             <CardContent className="min-h-0 flex-1 p-0">
-              <ScrollArea className="h-[32rem] px-4 py-3">
+              <ScrollArea className="h-[32rem] px-4 py-4">
                 <div className="space-y-3">
                   {transcript.length === 0 && !assistant ? (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm leading-6 text-muted-foreground">
                       Waiting for a run. After you click excavate, session create → turn
                       stream events land here.
                     </p>
@@ -826,10 +824,10 @@ export function ResonanceApp() {
                     <div
                       key={item.id}
                       className={cn(
-                        "rounded-lg px-3 py-2 text-xs leading-5",
+                        "rounded-lg px-3 py-2.5 text-xs leading-5",
                         item.kind === "user" && "bg-cyan-400/10 text-cyan-50",
                         item.kind === "status" && "bg-muted/50 text-muted-foreground",
-                        item.kind === "tool" && "bg-orange-400/10 text-orange-100",
+                        item.kind === "tool" && "bg-orange-400/12 text-orange-100",
                         item.kind === "subagent" && "bg-violet-400/10 text-violet-100",
                         item.kind === "error" && "bg-rose-400/10 text-rose-100",
                       )}
@@ -841,7 +839,7 @@ export function ResonanceApp() {
                     </div>
                   ))}
                   {assistant ? (
-                    <div className="rounded-lg bg-foreground/5 px-3 py-2 text-xs leading-5">
+                    <div className="rounded-lg bg-foreground/5 px-3 py-2.5 text-xs leading-5">
                       <p className="mb-1 font-mono text-[10px] tracking-wide text-cyan-300 uppercase">
                         assistant
                       </p>
@@ -878,13 +876,35 @@ export function ResonanceApp() {
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({
+  label,
+  value,
+  accent = false,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
   return (
-    <div className="rounded-xl border border-cyan-400/10 bg-card/60 px-4 py-3">
-      <p className="font-mono text-[10px] tracking-[0.18em] text-muted-foreground uppercase">
+    <div
+      className={cn(
+        "rounded-xl border bg-card/70 px-4 py-3.5",
+        accent
+          ? "border-orange-400/30 shadow-[0_0_24px_rgba(251,146,60,0.12)]"
+          : "border-cyan-400/15",
+      )}
+    >
+      <p className="font-mono text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
         {label}
       </p>
-      <p className="mt-1 truncate font-mono text-sm text-cyan-100">{value}</p>
+      <p
+        className={cn(
+          "mt-1.5 truncate font-mono text-sm tabular-nums",
+          accent ? "text-orange-100" : "text-cyan-100",
+        )}
+      >
+        {value}
+      </p>
     </div>
   );
 }
