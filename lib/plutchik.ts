@@ -18,14 +18,14 @@ export const EMOTION_LABELS: Record<EmotionKey, string> = {
 };
 
 export const EMOTION_COLORS: Record<EmotionKey, string> = {
-  joy: "#f5d76e",
-  trust: "#5ee0a0",
-  fear: "#7dffb3",
-  surprise: "#67e8f9",
-  sadness: "#60a5fa",
-  disgust: "#c084fc",
-  anger: "#fb7185",
-  anticipation: "#fb923c",
+  joy: "var(--color-emotion-joy, #f5d76e)",
+  trust: "var(--color-emotion-trust, #5ee0a0)",
+  fear: "var(--color-emotion-fear, #7dffb3)",
+  surprise: "var(--color-emotion-surprise, #67e8f9)",
+  sadness: "var(--color-emotion-sadness, #60a5fa)",
+  disgust: "var(--color-emotion-disgust, #c084fc)",
+  anger: "var(--color-emotion-anger, #fb7185)",
+  anticipation: "var(--color-emotion-anticipation, #fb923c)",
 };
 
 export type RadarPoint = {

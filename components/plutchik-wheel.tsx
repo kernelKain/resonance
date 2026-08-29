@@ -20,6 +20,7 @@ import {
   resolveAverageScores,
   toRadarPoints,
 } from "@/lib/plutchik";
+import { InfoTooltip } from "@/components/info-tooltip";
 import type { EmotionKey } from "@/lib/resonance-types";
 import { cn } from "@/lib/utils";
 
@@ -72,7 +73,10 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
   return (
     <Card className="border-cyan-400/20 bg-card/80 shadow-[0_0_60px_rgba(8,145,178,0.08)]">
       <CardHeader className="gap-2">
-        <CardTitle className="text-lg tracking-tight">Emotion Profile</CardTitle>
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-lg tracking-tight">Emotion Profile</CardTitle>
+          <InfoTooltip content="Plutchik's Wheel of Emotions maps 8 core emotions. This profile shows the aggregate emotional footprint of your customers' reviews." />
+        </div>
         <CardDescription className="leading-6">
           {scores
             ? `Eight-dimension profile from ${source}. Dominant: ${dominant ? EMOTION_LABELS[dominant] : "—"}.`
