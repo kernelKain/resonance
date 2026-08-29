@@ -234,7 +234,7 @@ export function ResonanceApp() {
               </div>
 
               {phase === "done" && !devMode ? (
-                <ResultsSummary stream={stream} />
+                <ResultsSummary stream={stream} productName={productName} />
               ) : (
                 <AgentOutput
                   stream={stream}
