@@ -23,7 +23,7 @@ export type TranscriptItem = {
 const HITL_PAUSE_MARKER = "<!-- HITL_PAUSE -->";
 
 function excavationPrompt(productName: string, basename: string, rowCount: number) {
-  return `Follow the Day 5 protocol for product "${productName}". CSV file is ${basename} (${rowCount} reviews). Read it with the filesystem MCP (basename only — never a demo_data/ prefix). Spawn a subagent to research the product with Exa. Score every row. Emit the scored_reviews resonance-data fence. Persist scored_reviews.json. Copy scripts/cluster.py into the TrueForge sandbox and run cluster.py there. Emit cluster_results VERBATIM from cluster.py. Then name one archetype per cluster and write 3–5 Hidden Asks with action_items null. Emit analysis_result. Then emit approval_request and call ask_user_question with options Approved and Decline. Do not emit action_items until the user answers Approved.`;
+  return `Follow the Day 5 protocol for product "${productName}". CSV file is ${basename} (${rowCount} reviews). Read it with the filesystem MCP (basename only — never a demo_data/ prefix). Spawn a subagent to research the product with Exa. Score every row. Emit compact JSON (no pretty-print) in every resonance-data fence. Persist scored_reviews.json. Copy scripts/cluster.py into the TrueForge sandbox and run cluster.py there. Emit cluster_results VERBATIM from cluster.py. Then name one archetype per cluster and write 3–5 Hidden Asks with action_items null. Emit analysis_result with scored_reviews [] and cluster_results {}. Then emit approval_request and call ask_user_question with options Approved and Decline. Do not emit action_items until the user answers Approved.`;
 }
 
 function summarizeEvent(event: Record<string, unknown>): TranscriptItem | null {
@@ -95,7 +95,7 @@ export function useResonanceState() {
   const [error, setError] = useState<string | null>(null);
   const [transcript, setTranscript] = useState<TranscriptItem[]>([]);
   const [assistant, setAssistant] = useState("");
-  const [stream, setStream] = useState<ResonanceStreamState>(emptyResonanceStream());
+  const [stream, setStream] = useState<ResonanceStreamState>(emptyResonanceStream);
   const [uploadMeta, setUploadMeta] = useState<{
     filePath: string;
     rowCount: number;
@@ -107,8 +107,23 @@ export function useResonanceState() {
 
   const assistantRef = useRef("");
   const replayCancelRef = useRef(false);
+  const flushRafRef = useRef<number | null>(null);
+
+  function cancelFlush() {
+    if (flushRafRef.current != null) {
+      window.cancelAnimationFrame(flushRafRef.current);
+      flushRafRef.current = null;
+    }
+  }
+
+  function flushAssistant() {
+    cancelFlush();
+    setAssistant(assistantRef.current);
+    setStream(extractResonanceStream(assistantRef.current));
+  }
 
   function resetStream() {
+    cancelFlush();
     assistantRef.current = "";
     setAssistant("");
     setStream(emptyResonanceStream());
@@ -122,16 +137,25 @@ export function useResonanceState() {
   function ingestAssistantChunk(piece: string) {
     if (!piece) return;
     assistantRef.current += piece;
-    setAssistant(assistantRef.current);
-    setStream(extractResonanceStream(assistantRef.current));
+    if (flushRafRef.current != null) return;
+    flushRafRef.current = window.requestAnimationFrame(() => {
+      flushRafRef.current = null;
+      setAssistant(assistantRef.current);
+      setStream(extractResonanceStream(assistantRef.current));
+    });
   }
 
   async function loadSample() {
-    const response = await fetch("/demo/hero_reviews.csv", { cache: "no-store" });
-    if (!response.ok) throw new Error("Could not load hero_reviews.csv");
-    const blob = await response.blob();
-    setFile(new File([blob], "hero_reviews.csv", { type: "text/csv" }));
-    setProductName("Linear");
+    try {
+      const response = await fetch("/demo/hero_reviews.csv", { cache: "no-store" });
+      if (!response.ok) throw new Error("Could not load hero_reviews.csv");
+      const blob = await response.blob();
+      setFile(new File([blob], "hero_reviews.csv", { type: "text/csv" }));
+      setProductName("Linear");
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : "Could not load demo dataset.";
+      setError(message);
+    }
   }
 
   async function loadScoringFixture() {
@@ -165,6 +189,7 @@ export function useResonanceState() {
         ingestAssistantChunk(text.slice(i, i + size));
         await sleep(12);
       }
+      flushAssistant();
       setPhase("done");
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "Replay failed.";
@@ -201,6 +226,7 @@ export function useResonanceState() {
         ingestAssistantChunk(before.slice(i, i + size));
         await sleep(12);
       }
+      flushAssistant();
       const parsed = extractResonanceStream(assistantRef.current);
       setReplayTail(after);
       setPendingQuestion(
@@ -266,15 +292,20 @@ export function useResonanceState() {
       }
     });
 
-    const parsed = extractResonanceStream(assistantRef.current);
+    flushAssistant();
+    extractResonanceStream(assistantRef.current);
+
     if (ingest.paused) {
-      setPendingQuestion(
-        ingest.pending ??
-          (parsed.approval
-            ? replayPendingQuestion(parsed.approval.message)
-            : pendingQuestion),
+      if (ingest.pending?.toolCallId && ingest.pending.toolCallId !== REPLAY_TOOL_CALL_ID) {
+        setPendingQuestion(ingest.pending);
+        setPhase("awaiting_approval");
+        return;
+      }
+      setPendingQuestion(null);
+      setError(
+        "TrueForge paused for approval, but the tool call id was missing. Start a new TrueForge conversation, re-run bootstrap, and try again. Do not click Approve.",
       );
-      setPhase("awaiting_approval");
+      setPhase("error");
       return;
     }
 
@@ -379,6 +410,7 @@ export function useResonanceState() {
             ingestAssistantChunk(tail.slice(i, i + size));
             await sleep(12);
           }
+          flushAssistant();
         }
         setPendingQuestion(null);
         setReplayTail("");

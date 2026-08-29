@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { extractResonanceStream } from "../lib/resonance-parse";
+import { extractResonanceStream, statusTextFromStream } from "../lib/resonance-parse";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const FIXTURE = path.join(ROOT, "public/demo/stream_fixture.txt");
@@ -63,6 +63,20 @@ const unfenced = extractResonanceStream(
   `prefix {"type":"scored_reviews","product_name":"Linear","product_context":"ctx","total_reviews":1,"reviews":[]} suffix`,
 );
 if (!unfenced.scored) fail("fallback extractor missed an unfenced scored_reviews object");
+
+const stubAnalysis = extractResonanceStream('```resonance-data\n{"type":"analysis_result"}\n```\n');
+if (stubAnalysis.analysis) fail("stub analysis_result must not enter stream state");
+if (!stubAnalysis.parseErrors.length) fail("stub analysis_result must record a parse error");
+try {
+  statusTextFromStream(stubAnalysis, "running", null);
+} catch (error) {
+  fail(`statusTextFromStream threw on stub analysis: ${error}`);
+}
+
+const stubScored = extractResonanceStream(
+  '```resonance-data\n{"type":"scored_reviews","total_reviews":2}\n```\n',
+);
+if (stubScored.scored) fail("scored_reviews without reviews[] must not enter stream state");
 
 console.log("PASS");
 console.log(

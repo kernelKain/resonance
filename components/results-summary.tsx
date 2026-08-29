@@ -7,7 +7,7 @@ import { resolveAverageScores, dominantEmotion, EMOTION_LABELS } from "@/lib/plu
 export function ResultsSummary({ stream }: { stream: ResonanceStreamState }) {
   const scores = resolveAverageScores(stream);
   const dominant = scores ? dominantEmotion(scores) : null;
-  
+
   const findings = stream.actionItems?.items.slice(0, 3) || [];
 
   return (
@@ -27,9 +27,9 @@ export function ResultsSummary({ stream }: { stream: ResonanceStreamState }) {
             <strong>Synthesis:</strong> The primary emotional driver across {stream.scored?.total_reviews || 0} reviews is{" "}
             <span className="font-semibold text-cyan-300">
               {dominant ? EMOTION_LABELS[dominant].toLowerCase() : "neutrality"}
-            </span>. 
-            We identified {stream.analysis?.archetypes.length || 0} distinct customer segments 
-            and {stream.analysis?.hidden_asks.length || 0} unspoken needs.
+            </span>.
+            We identified {stream.analysis?.archetypes?.length ?? 0} distinct customer segments
+            and {stream.analysis?.hidden_asks?.length ?? 0} unspoken needs.
           </p>
         </div>
 
