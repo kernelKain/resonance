@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore, useState, useCallback, useRef, useLayoutEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -82,6 +82,43 @@ function useIsClient() {
   return useSyncExternalStore(subscribe, () => true, () => false);
 }
 
+// ─── Emotion Descriptions ─────────────────────────────────────────────────────
+
+const EMOTION_DESCRIPTIONS: Record<EmotionKey, string> = {
+  joy:          "A feeling of pleasure, happiness, and delight.",
+  trust:        "Confidence, acceptance, and faith in others.",
+  fear:         "An unpleasant emotion caused by perceived danger.",
+  surprise:     "A brief, startle-like response to the unexpected.",
+  sadness:      "A sense of loss, sorrow, or disappointment.",
+  disgust:      "Revulsion or strong disapproval toward something.",
+  anger:        "Intense displeasure or antagonism toward a cause.",
+  anticipation: "Excitement or anxiety about a future event.",
+};
+
+// ─── Custom Radar Dot ─────────────────────────────────────────────────────────
+
+type DotProps = {
+  cx?: number;
+  cy?: number;
+  payload?: { key: EmotionKey };
+};
+
+function EmotionDot({ cx = 0, cy = 0, payload }: DotProps) {
+  const key = payload?.key;
+  const color = key ? (EMOTION_COLORS[key] ?? "#67e8f9") : "#67e8f9";
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      r={4}
+      fill={color}
+      stroke="rgba(15,23,42,0.7)"
+      strokeWidth={1.5}
+      style={{ filter: `drop-shadow(0 0 4px ${color})` }}
+    />
+  );
+}
+
 // ─── Custom Radar Tooltip ─────────────────────────────────────────────────────
 
 function RadarTooltipContent({
@@ -92,6 +129,7 @@ function RadarTooltipContent({
   const item = payload?.[0];
   if (!item) return null;
   const pt = item.payload;
+  const description = EMOTION_DESCRIPTIONS[pt.key];
   return (
     <div className="rounded-lg border border-cyan-400/20 bg-slate-900/96 px-3 py-2.5 text-xs shadow-2xl backdrop-blur-md">
       <p
@@ -110,9 +148,13 @@ function RadarTooltipContent({
           style={{ width: `${pt.value * 100}%`, background: pt.color }}
         />
       </div>
+      {description && (
+        <p className="mt-2 leading-5 text-slate-400">{description}</p>
+      )}
     </div>
   );
 }
+
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -152,7 +194,7 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
         </div>
         <CardDescription className="leading-6">
           {scores
-            ? `Eight-dimension profile from ${source}. Dominant: ${dominant ? EMOTION_LABELS[dominant] : "—"}.`
+            ? `Eight-dimension profile from ${source}.`
             : "Emotion profiles will appear here once the analysis begins."}
         </CardDescription>
       </CardHeader>
@@ -236,6 +278,7 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
                       isAnimationActive
                       animationDuration={700}
                       animationEasing="ease-out"
+                      dot={<EmotionDot />}
                     />
 
                     <Tooltip cursor={false} content={<RadarTooltipContent />} />
@@ -348,34 +391,6 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
 
         </div>
 
-        {/* ── Hover detail hint ─────────────────────────────────────────────── */}
-        <AnimatePresence>
-          {hoveredKey && scores && (
-            <motion.div
-              key={hoveredKey}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 4 }}
-              transition={{ duration: 0.15 }}
-              className="mt-4 flex items-center gap-2.5 rounded-lg border border-cyan-400/15 bg-cyan-400/5 px-3 py-2"
-            >
-              <span
-                className="size-2 shrink-0 rounded-full"
-                style={{ background: EMOTION_COLORS[hoveredKey] }}
-              />
-              <p className="font-mono text-[11px] tracking-wide text-cyan-100/80">
-                <span className="font-semibold" style={{ color: EMOTION_COLORS[hoveredKey] }}>
-                  {EMOTION_LABELS[hoveredKey]}
-                </span>
-                {" — "}
-                score {scores[hoveredKey].toFixed(2)} / 1.00
-                {hoveredKey === dominant && (
-                  <span className="ml-2 text-cyan-400/70">· dominant emotion</span>
-                )}
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </CardContent>
     </Card>
   );
