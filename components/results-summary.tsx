@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { CheckCircle2, Download, Share2, Check, Link } from "lucide-react";
+import { CheckCircle2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ResonanceStreamState } from "@/lib/resonance-parse";
@@ -12,36 +11,10 @@ type Props = {
   productName?: string;
 };
 
-/**
- * Serialises a lightweight result summary into a base64-encoded URL hash so
- * the user can share a link that restores the key metrics without any server.
- * Full dataset is not shared — only headline numbers and the dominant emotion.
- */
-function buildShareUrl(stream: ResonanceStreamState, productName: string): string {
-  const scores = resolveAverageScores(stream);
-  const dominant = scores ? dominantEmotion(scores) : null;
-
-  const summary = {
-    p: productName,
-    r: stream.scored?.total_reviews ?? 0,
-    s: stream.analysis?.archetypes?.length ?? 0,
-    a: stream.analysis?.hidden_asks?.length ?? 0,
-    d: dominant ?? "",
-    rec: stream.actionItems?.items.slice(0, 3).map((i) => i.recommendation) ?? [],
-  };
-
-  const encoded = btoa(encodeURIComponent(JSON.stringify(summary)));
-  const url = `${window.location.origin}${window.location.pathname}#result=${encoded}`;
-  return url;
-}
-
 export function ResultsSummary({ stream, productName = "Product" }: Props) {
   const scores = resolveAverageScores(stream);
   const dominant = scores ? dominantEmotion(scores) : null;
   const findings = stream.actionItems?.items.slice(0, 3) ?? [];
-
-  // Share button state
-  const [copied, setCopied] = useState(false);
 
   function handleExportPdf() {
     const prev = document.title;
@@ -49,23 +22,6 @@ export function ResultsSummary({ stream, productName = "Product" }: Props) {
     window.print();
     // Restore original title after a brief delay (print dialog can be async)
     setTimeout(() => { document.title = prev; }, 2000);
-  }
-
-  async function handleShare() {
-    const url = buildShareUrl(stream, productName);
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch {
-      // Fallback: create a temporary input and copy from it
-      const input = document.createElement("input");
-      input.value = url;
-      document.body.appendChild(input);
-      input.select();
-      document.execCommand("copy");
-      document.body.removeChild(input);
-    }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
   }
 
   return (
@@ -82,7 +38,7 @@ export function ResultsSummary({ stream, productName = "Product" }: Props) {
 
       <CardContent className="space-y-6">
         {/* ── Synthesis block ─────────────────────────────────────── */}
-        <div className="rounded-lg border border-cyan-400/10 bg-cyan-400/5 p-4">
+        <div className="rounded-lg border border-cyan-400/10 bg-cyan-400/5 p-4 space-y-3">
           <p className="text-sm leading-6 text-cyan-100">
             <strong>Synthesis:</strong> The primary emotional driver across{" "}
             {stream.scored?.total_reviews ?? 0} reviews is{" "}
@@ -92,6 +48,42 @@ export function ResultsSummary({ stream, productName = "Product" }: Props) {
             . We identified {stream.analysis?.archetypes?.length ?? 0} distinct customer segments
             and {stream.analysis?.hidden_asks?.length ?? 0} unspoken needs.
           </p>
+          {/* Plain-English metric guide */}
+          <dl className="grid grid-cols-1 gap-2 border-t border-cyan-400/10 pt-3 sm:grid-cols-3">
+            <div>
+              <dt className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
+                Reviews analysed
+              </dt>
+              <dd className="mt-0.5 font-mono text-sm tabular-nums text-cyan-100">
+                {stream.scored?.total_reviews ?? 0}
+              </dd>
+              <dd className="mt-0.5 text-xs leading-5 text-muted-foreground">
+                Total scored rows from your CSV.
+              </dd>
+            </div>
+            <div>
+              <dt className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
+                Customer segments
+              </dt>
+              <dd className="mt-0.5 font-mono text-sm tabular-nums text-cyan-100">
+                {stream.analysis?.archetypes?.length ?? 0}
+              </dd>
+              <dd className="mt-0.5 text-xs leading-5 text-muted-foreground">
+                Groups of reviewers sharing emotional patterns.
+              </dd>
+            </div>
+            <div>
+              <dt className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
+                Unspoken needs
+              </dt>
+              <dd className="mt-0.5 font-mono text-sm tabular-nums text-cyan-100">
+                {stream.analysis?.hidden_asks?.length ?? 0}
+              </dd>
+              <dd className="mt-0.5 text-xs leading-5 text-muted-foreground">
+                Desires felt but never explicitly requested.
+              </dd>
+            </div>
+          </dl>
         </div>
 
         {/* ── Top recommendations ─────────────────────────────────── */}
@@ -114,46 +106,18 @@ export function ResultsSummary({ stream, productName = "Product" }: Props) {
         )}
 
         {/* ── Action buttons ──────────────────────────────────────── */}
-        <div className="no-print flex gap-3 pt-2">
+        <div className="no-print pt-2">
           {/* PDF Export — triggers browser print dialog with @media print styles */}
           <Button
             variant="outline"
-            className="flex-1 gap-2"
+            className="gap-2"
             onClick={handleExportPdf}
             title="Export as PDF using the browser print dialog"
           >
             <Download className="size-4" />
             Export PDF
           </Button>
-
-          {/* Share — encodes a summary into a URL hash and copies to clipboard */}
-          <Button
-            variant="outline"
-            className="flex-1 gap-2 transition-colors"
-            onClick={handleShare}
-            title="Copy a shareable summary link to clipboard"
-          >
-            {copied ? (
-              <>
-                <Check className="size-4 text-cyan-300" />
-                <span className="text-cyan-300">Copied!</span>
-              </>
-            ) : (
-              <>
-                <Share2 className="size-4" />
-                Share
-              </>
-            )}
-          </Button>
         </div>
-
-        {/* Copy confirmation hint */}
-        {copied && (
-          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Link className="size-3" />
-            Link copied — it includes top recommendations and key metrics.
-          </p>
-        )}
       </CardContent>
     </Card>
   );

@@ -268,22 +268,61 @@
     display: none !important;
   }
 
-  /* Force white background and black text for readability */
+  /* Dark-mode PDF: keep the slate palette instead of forcing white */
   body,
   .bg-background,
   .glass-surface,
   [class*="bg-card"],
   [class*="bg-slate"] {
-    background: white !important;
-    color: black !important;
+    background: #0f172a !important;
+    color: #e2e8f0 !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
 
-  /* Reset gradient text so it prints as solid colour */
+  /* Soften card borders for dark print */
+  [data-slot="card"],
+  article {
+    border-color: rgba(148, 163, 184, 0.2) !important;
+  }
+
+  /* Keep gradient heading text readable on dark background */
   .heading-gradient {
-    -webkit-text-fill-color: oklch(0.2 0.08 205);
+    -webkit-text-fill-color: #67e8f9;
     background: none;
+  }
+
+  /* ── Force ALL tab panels visible so every section prints ── */
+  /* Tabs hide inactive panels with display:none — override for print */
+  [role="tabpanel"] {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  /* Remove scroll-area height constraint so all cards print */
+  [data-radix-scroll-area-viewport],
+  .h-\[28rem\] {
+    height: auto !important;
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /* Print section order headings as separators */
+  [data-tab-section]::before {
+    content: attr(data-tab-section);
+    display: block;
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #67e8f9;
+    padding: 1rem 0 0.5rem;
+    border-top: 1px solid rgba(103, 232, 249, 0.2);
+    margin-top: 1.5rem;
   }
 
   /* Let cards and grids reflow to full width for print */
@@ -293,7 +332,6 @@
     page-break-inside: avoid;
     break-inside: avoid;
     margin-bottom: 1rem;
-    border: 1px solid #e2e8f0 !important;
     border-radius: 0.5rem;
     padding: 1rem;
   }
