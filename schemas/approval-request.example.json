@@ -1,0 +1,5 @@
+{
+  "type": "approval_request",
+  "message": "I found 3 Hidden Asks. Generating product-roadmap recommendations will change what we propose to ship. Approve to continue, or Decline to stop here.",
+  "hidden_ask_count": 3
+}

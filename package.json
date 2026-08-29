@@ -13,7 +13,8 @@
     "lint": "eslint",
     "test:parse": "npx --yes tsx scripts/validate-stream-parse.ts",
     "test:plutchik": "npx --yes tsx scripts/validate-plutchik-averages.ts",
-    "test:insights": "npx --yes tsx scripts/validate-insight-views.ts"
+    "test:insights": "npx --yes tsx scripts/validate-insight-views.ts",
+    "test:hitl": "node scripts/validate-hitl-protocol.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
