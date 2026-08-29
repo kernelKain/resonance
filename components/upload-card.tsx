@@ -65,15 +65,18 @@ export function UploadCard({
       <CardContent className="space-y-6 px-6 pb-6">
         <div className="space-y-2">
           <label className="text-sm font-medium" htmlFor="product">
-            Product / brand
+            Product name or live URL
           </label>
           <Input
             id="product"
             value={productName}
             onChange={(event) => setProductName(event.target.value)}
-            placeholder="Linear"
+            placeholder="Linear · https://linear.app"
             className="h-11 bg-background/60 text-base"
           />
+          <p className="text-xs leading-5 text-muted-foreground">
+            Enter the product name or paste its public link — helps the AI interpret reviews in the right context.
+          </p>
         </div>
 
         <motion.div

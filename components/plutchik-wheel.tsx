@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, useState } from "react";
 import { motion } from "framer-motion";
 import {
   PolarAngleAxis,
@@ -9,6 +9,7 @@ import {
   Radar,
   RadarChart,
   ResponsiveContainer,
+  Tooltip,
 } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,6 +62,8 @@ function useIsClient() {
 
 export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
   const isClient = useIsClient();
+  const [hoveredKey, setHoveredKey] = useState<EmotionKey | null>(null);
+
   const scores = resolveAverageScores(stream);
   const points = scores ? toRadarPoints(scores) : [];
   const dominant = scores ? dominantEmotion(scores) : null;
@@ -69,6 +72,9 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
     : stream.scored
       ? "review scores"
       : null;
+
+  // The actively highlighted key: what the user is hovering, otherwise nothing
+  const activeKey = hoveredKey;
 
   return (
     <Card className="border-cyan-400/20 bg-card/80 shadow-[0_0_60px_rgba(8,145,178,0.08)]">
@@ -126,6 +132,27 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
                       isAnimationActive
                       animationDuration={700}
                     />
+                    <Tooltip
+                      cursor={false}
+                      content={({ payload }) => {
+                        const item = payload?.[0];
+                        if (!item) return null;
+                        const pt = item.payload as { axis: string; key: EmotionKey; value: number; color: string };
+                        return (
+                          <div className="rounded-lg border border-cyan-400/20 bg-slate-900/95 px-3 py-2 text-xs shadow-xl backdrop-blur-sm">
+                            <p
+                              className="font-mono tracking-[0.14em] uppercase"
+                              style={{ color: pt.color }}
+                            >
+                              {pt.axis}
+                            </p>
+                            <p className="mt-1 font-mono tabular-nums text-cyan-100">
+                              {pt.value.toFixed(2)} / 1.00
+                            </p>
+                          </div>
+                        );
+                      }}
+                    />
                   </RadarChart>
                 </ResponsiveContainer>
               </motion.div>
@@ -136,7 +163,7 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
                 </p>
               </div>
             )}
-            
+
             {/* Screen reader only data table */}
             {scores && (
               <table className="sr-only">
@@ -173,24 +200,36 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
               ] as EmotionKey[]
             ).map((key) => {
               const value = scores?.[key] ?? 0;
+              const isHovered = activeKey === key;
+              const isDominant = dominant === key;
               return (
                 <li
                   key={key}
+                  onMouseEnter={() => setHoveredKey(key)}
+                  onMouseLeave={() => setHoveredKey(null)}
                   className={cn(
-                    "rounded-lg border border-border/70 px-2.5 py-2",
-                    dominant === key &&
+                    "cursor-default rounded-lg border border-border/70 px-2.5 py-2 transition-all duration-150",
+                    isHovered &&
                       "border-cyan-400/50 bg-cyan-400/10 shadow-[inset_0_0_20px_rgba(34,211,238,0.08)]",
                   )}
                 >
                   <p className="flex items-center gap-2 font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
                     <span
                       className={cn(
-                        "size-2 rounded-full",
-                        key === dominant && "shadow-[0_0_8px_currentColor] animate-pulse"
+                        "size-2 rounded-full transition-all duration-150",
+                        // Pulse only the dominant dot when nothing is hovered
+                        isDominant && !hoveredKey && "shadow-[0_0_8px_currentColor] animate-pulse",
+                        // Glow on hover
+                        isHovered && "shadow-[0_0_10px_currentColor] scale-125",
                       )}
                       style={{ background: EMOTION_COLORS[key], color: EMOTION_COLORS[key] }}
                     />
                     {EMOTION_LABELS[key]}
+                    {isDominant && (
+                      <span className="ml-auto font-mono text-[9px] tracking-widest text-cyan-400/60 uppercase">
+                        top
+                      </span>
+                    )}
                   </p>
                   <p className="mt-1 font-mono text-sm tabular-nums text-cyan-100">
                     {scores ? value.toFixed(2) : "—"}
