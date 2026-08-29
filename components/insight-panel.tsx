@@ -197,25 +197,25 @@ export function InsightPanel({ stream }: { stream: ResonanceStreamState }) {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="archetypes" className="w-full">
-          <TabsList variant="line" className="grid h-auto w-full grid-cols-2 gap-x-1 lg:grid-cols-4">
-            <TabsTrigger value="archetypes" className="group px-2 py-2 text-xs sm:text-sm">
-              <Users className="size-3.5" />
-              Segments ({archetypes.length})
-              <div className="hidden xl:block"><InfoTooltip content="Distinct behavioral profiles identified by clustering emotional signatures and phrasing patterns across reviews." /></div>
+          <TabsList variant="line" className="grid h-auto w-full grid-cols-2 gap-x-1 overflow-x-auto lg:grid-cols-4">
+            <TabsTrigger value="archetypes" className="group flex items-center gap-1.5 whitespace-nowrap px-2 py-2 text-xs sm:text-sm">
+              <Users className="size-3.5 shrink-0" />
+              <span>Segments ({archetypes.length})</span>
+              <span className="hidden xl:inline-flex"><InfoTooltip content="Distinct behavioral profiles identified by clustering emotional signatures and phrasing patterns across reviews." /></span>
             </TabsTrigger>
-            <TabsTrigger value="asks" className="group px-2 py-2 text-xs sm:text-sm">
-              <Sparkles className="size-3.5" />
-              Unspoken Needs ({asks.length})
-              <div className="hidden xl:block"><InfoTooltip content="Latent desires that users express through emotional subtext rather than direct feature requests." /></div>
+            <TabsTrigger value="asks" className="group flex items-center gap-1.5 whitespace-nowrap px-2 py-2 text-xs sm:text-sm">
+              <Sparkles className="size-3.5 shrink-0" />
+              <span>Unspoken Needs ({asks.length})</span>
+              <span className="hidden xl:inline-flex"><InfoTooltip content="Latent desires that users express through emotional subtext rather than direct feature requests." /></span>
             </TabsTrigger>
-            <TabsTrigger value="dissonance" className="group px-2 py-2 text-xs sm:text-sm">
-              <AlertTriangle className="size-3.5" />
-              Red Flags ({alerts.length})
-              <div className="hidden xl:block"><InfoTooltip content="Cognitive dissonance detected when a user's literal words contradict their underlying emotional state." /></div>
+            <TabsTrigger value="dissonance" className="group flex items-center gap-1.5 whitespace-nowrap px-2 py-2 text-xs sm:text-sm">
+              <AlertTriangle className="size-3.5 shrink-0" />
+              <span>Red Flags ({alerts.length})</span>
+              <span className="hidden xl:inline-flex"><InfoTooltip content="Cognitive dissonance detected when a user's literal words contradict their underlying emotional state." /></span>
             </TabsTrigger>
-            <TabsTrigger value="actions" className="px-2 py-2 text-xs sm:text-sm">
-              <Waypoints className="size-3.5" />
-              Recommendations ({actions.length})
+            <TabsTrigger value="actions" className="flex items-center gap-1.5 whitespace-nowrap px-2 py-2 text-xs sm:text-sm">
+              <Waypoints className="size-3.5 shrink-0" />
+              <span>Recommendations ({actions.length})</span>
             </TabsTrigger>
           </TabsList>
 

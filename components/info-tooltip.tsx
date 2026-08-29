@@ -1,20 +1,40 @@
-import { Info } from "lucide-react";
+"use client";
 
+import { Info } from "lucide-react";
+import { Tooltip } from "@base-ui/react";
+
+/**
+ * InfoTooltip renders an (i) icon that shows a floating tooltip on hover/focus.
+ * The popup is portal-rendered at the document root so it is never clipped by
+ * ancestor overflow or stacking-context boundaries (e.g. sticky headers, Cards).
+ */
 export function InfoTooltip({ content }: { content: string }) {
   return (
-    <div className="group relative inline-flex items-center justify-center">
-      <div
-        className="inline-flex items-center justify-center rounded-full p-1 text-muted-foreground transition-colors hover:bg-cyan-400/10 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300"
-      >
-        <Info className="size-3.5" />
-        <span className="sr-only">More information</span>
-      </div>
-      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-        <div className="rounded-lg border border-cyan-400/20 bg-slate-900 px-3 py-2 text-sm leading-6 text-slate-200 shadow-xl">
-          {content}
-          <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-b border-r border-cyan-400/20 bg-slate-900" />
-        </div>
-      </div>
-    </div>
+    <Tooltip.Provider>
+      <Tooltip.Root>
+        <Tooltip.Trigger
+          className="inline-flex items-center justify-center rounded-full p-1 text-muted-foreground transition-colors hover:bg-cyan-400/10 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300"
+          aria-label="More information"
+        >
+          <Info className="size-3.5" />
+        </Tooltip.Trigger>
+
+        <Tooltip.Portal>
+          <Tooltip.Popup className="z-[200] w-64 rounded-lg border border-cyan-400/20 bg-slate-900 px-3 py-2 text-sm leading-6 text-slate-200 shadow-xl">
+            {content}
+            <Tooltip.Arrow>
+              <svg width="8" height="4" viewBox="0 0 8 4" aria-hidden>
+                <path
+                  d="M0 4L4 0L8 4"
+                  fill="rgb(15 23 42)"
+                  stroke="rgba(34,211,238,0.2)"
+                  strokeWidth="1"
+                />
+              </svg>
+            </Tooltip.Arrow>
+          </Tooltip.Popup>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </Tooltip.Provider>
   );
 }
