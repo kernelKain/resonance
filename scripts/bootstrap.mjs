@@ -195,7 +195,13 @@ async function main() {
   }
 
   await upsertModelProvider();
-  await upsertSandboxProvider();
+  
+  try {
+    await upsertSandboxProvider();
+  } catch (err) {
+    console.error(`• Warning: Sandbox provisioning failed: ${err.message}`);
+  }
+
   await upsertMcp({
     type: "remote",
     name: "filesystem",
