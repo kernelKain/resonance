@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { parseCsv, requireReviewTextColumn } from "../lib/csv.ts";
+import { parseCsv, requireReviewTextColumn } from "../lib/csv";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DEMO = path.join(ROOT, "demo_data/hero_reviews.csv");
