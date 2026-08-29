@@ -7,6 +7,14 @@ import type {
   ScoredReviewsPayload,
 } from "@/lib/resonance-types";
 
+export type ResonancePhase =
+  | "idle"
+  | "uploading"
+  | "running"
+  | "awaiting_approval"
+  | "done"
+  | "error";
+
 export type ResonanceStreamState = {
   scored: ScoredReviewsPayload | null;
   clustered: ClusterResultsPayload | null;
@@ -94,9 +102,12 @@ function unwrap(parsed: ResonancePayload): ResonancePayload {
       inner.clusters ||
       inner.archetypes ||
       inner.hidden_asks ||
+      inner.items ||
       inner.type === "scored_reviews" ||
       inner.type === "cluster_results" ||
-      inner.type === "analysis_result"
+      inner.type === "analysis_result" ||
+      inner.type === "approval_request" ||
+      inner.type === "action_items"
     ) {
       return { ...(inner as object), type: (inner.type ?? parsed.type) } as ResonancePayload;
     }
@@ -104,7 +115,11 @@ function unwrap(parsed: ResonancePayload): ResonancePayload {
   return parsed;
 }
 
-function extractFencedPayloads(raw: string): { payloads: ResonancePayload[]; fenceCount: number; errors: string[] } {
+function extractFencedPayloads(raw: string): {
+  payloads: ResonancePayload[];
+  fenceCount: number;
+  errors: string[];
+} {
   const payloads: ResonancePayload[] = [];
   const errors: string[] = [];
   const fenceRe = /```resonance-data[^\n]*\r?\n([\s\S]*?)```/g;
@@ -199,11 +214,20 @@ export function extractResonanceStream(raw: string): ResonanceStreamState {
 
 export function statusTextFromStream(
   stream: ResonanceStreamState,
-  phase: "idle" | "uploading" | "running" | "done" | "error",
+  phase: ResonancePhase,
   error: string | null,
 ): string {
   if (phase === "uploading") return "Saving CSV to the shared volume…";
   if (phase === "error") return error ?? "Something broke.";
+  if (stream.actionItems) {
+    return `Recommendations ready: ${stream.actionItems.items.length} action items.`;
+  }
+  if (phase === "awaiting_approval" || (stream.approval && !stream.actionItems)) {
+    return (
+      stream.approval?.message ??
+      "TrueForge paused. Approve to generate product-roadmap recommendations."
+    );
+  }
   if (stream.analysis) {
     return `Parsed analysis: ${stream.analysis.archetypes.length} archetypes, ${stream.analysis.hidden_asks.length} Hidden Asks.`;
   }
@@ -214,7 +238,7 @@ export function statusTextFromStream(
     return `Scored ${stream.scored.total_reviews} reviews. Waiting on sandbox clustering…`;
   }
   if (phase === "running") {
-    return "TrueForge is working: filesystem MCP → research subagent → scoring → sandbox.";
+    return "TrueForge is working: filesystem MCP → research subagent → scoring → sandbox → HITL pause.";
   }
   if (phase === "done") {
     return stream.scored

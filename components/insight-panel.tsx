@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Quote, Sparkles, Users } from "lucide-react";
+import { AlertTriangle, Quote, Sparkles, Users, Waypoints } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -59,11 +59,7 @@ function ArchetypeCard({ archetype }: { archetype: ArchetypeCardModel }) {
           <li key={key}>
             <div className="mb-1 flex items-center justify-between font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
               <span>{EMOTION_LABELS[key]}</span>
-              <span>
-                {archetype.centroid
-                  ? archetype.centroid[key].toFixed(2)
-                  : "—"}
-              </span>
+              <span>{archetype.centroid ? archetype.centroid[key].toFixed(2) : "—"}</span>
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-muted">
               <div
@@ -139,23 +135,53 @@ function DissonanceCard({ alert }: { alert: DissonanceAlert }) {
   );
 }
 
+function ActionItemCard({
+  hiddenAsk,
+  recommendation,
+  priority,
+  effort,
+}: {
+  hiddenAsk: string;
+  recommendation: string;
+  priority: string;
+  effort: string;
+}) {
+  return (
+    <article className="rounded-xl border border-cyan-400/20 bg-cyan-400/5 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <h3 className="text-base font-semibold tracking-tight">{hiddenAsk}</h3>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="font-mono text-[10px] uppercase">
+            {priority}
+          </Badge>
+          <Badge variant="outline" className="font-mono text-[10px] uppercase">
+            effort {effort}
+          </Badge>
+        </div>
+      </div>
+      <p className="mt-3 text-sm leading-6 text-foreground/85">{recommendation}</p>
+    </article>
+  );
+}
+
 export function InsightPanel({ stream }: { stream: ResonanceStreamState }) {
   const archetypes = archetypesWithCentroids(stream);
   const asks = hiddenAskCards(stream);
   const alerts = dissonanceAlerts(stream);
+  const actions = stream.actionItems?.items ?? [];
 
   return (
     <Card className="border-cyan-400/10 bg-card/70">
       <CardHeader>
         <CardTitle className="text-base tracking-tight">Psychological findings</CardTitle>
         <CardDescription>
-          Archetypes and Hidden Asks come from analysis_result. Dissonance alerts light up as
-          soon as scored_reviews lands.
+          Archetypes and Hidden Asks come from analysis_result. Recommendations appear only
+          after you click Approved.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="archetypes" className="w-full">
-          <TabsList variant="line" className="grid w-full grid-cols-3">
+          <TabsList variant="line" className="grid w-full grid-cols-2 lg:grid-cols-4">
             <TabsTrigger value="archetypes">
               <Users className="size-3.5" />
               Archetypes ({archetypes.length})
@@ -167,6 +193,10 @@ export function InsightPanel({ stream }: { stream: ResonanceStreamState }) {
             <TabsTrigger value="dissonance">
               <AlertTriangle className="size-3.5" />
               Dissonance ({alerts.length})
+            </TabsTrigger>
+            <TabsTrigger value="actions">
+              <Waypoints className="size-3.5" />
+              Recs ({actions.length})
             </TabsTrigger>
           </TabsList>
 
@@ -198,7 +228,7 @@ export function InsightPanel({ stream }: { stream: ResonanceStreamState }) {
               ) : (
                 <EmptyHint>
                   Hidden Asks are implied needs, not feature requests. They arrive with
-                  analysis_result; action items stay empty until Day 5 approval.
+                  analysis_result; action items stay empty until you approve.
                 </EmptyHint>
               )}
             </ScrollArea>
@@ -216,6 +246,29 @@ export function InsightPanel({ stream }: { stream: ResonanceStreamState }) {
                 <EmptyHint>
                   No dissonance flags yet. Flagged reviews show here as soon as scoring
                   finishes — including reviews that look positive on the surface.
+                </EmptyHint>
+              )}
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="actions">
+            <ScrollArea className="h-[28rem] pr-2">
+              {actions.length ? (
+                <div className="space-y-3 py-1">
+                  {actions.map((item) => (
+                    <ActionItemCard
+                      key={`${item.hidden_ask}-${item.priority}`}
+                      hiddenAsk={item.hidden_ask}
+                      recommendation={item.recommendation}
+                      priority={item.priority}
+                      effort={item.effort}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <EmptyHint>
+                  Recommendations stay hidden until you click Approved. The harness pause is
+                  the product.
                 </EmptyHint>
               )}
             </ScrollArea>
