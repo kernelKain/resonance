@@ -16,7 +16,8 @@
     "test:insights": "npx --yes tsx scripts/validate-insight-views.ts",
     "test:hitl": "node scripts/validate-hitl-protocol.mjs",
     "test:turn": "npx --yes tsx scripts/validate-trueforge-turn.ts",
-    "test:hitl-parse": "npx --yes tsx scripts/validate-hitl-stream-parse.ts"
+    "test:hitl-parse": "npx --yes tsx scripts/validate-hitl-stream-parse.ts",
+    "test:hero": "npx --yes tsx scripts/validate-hero-csv.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

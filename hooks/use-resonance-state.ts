@@ -95,7 +95,7 @@ export function useResonanceState() {
   const [error, setError] = useState<string | null>(null);
   const [transcript, setTranscript] = useState<TranscriptItem[]>([]);
   const [assistant, setAssistant] = useState("");
-  const [stream, setStream] = useState<ResonanceStreamState>(emptyResonanceStream);
+  const [stream, setStream] = useState<ResonanceStreamState>(emptyResonanceStream());
   const [uploadMeta, setUploadMeta] = useState<{
     filePath: string;
     rowCount: number;
@@ -104,7 +104,7 @@ export function useResonanceState() {
   const [pendingQuestion, setPendingQuestion] = useState<PendingUserQuestion | null>(null);
   const [replayTail, setReplayTail] = useState<string>("");
   const [decisionBusy, setDecisionBusy] = useState(false);
-  
+
   const assistantRef = useRef("");
   const replayCancelRef = useRef(false);
 
@@ -127,9 +127,10 @@ export function useResonanceState() {
   }
 
   async function loadSample() {
-    const response = await fetch("/demo/sample_reviews.csv");
+    const response = await fetch("/demo/hero_reviews.csv", { cache: "no-store" });
+    if (!response.ok) throw new Error("Could not load hero_reviews.csv");
     const blob = await response.blob();
-    setFile(new File([blob], "sample_reviews.csv", { type: "text/csv" }));
+    setFile(new File([blob], "hero_reviews.csv", { type: "text/csv" }));
     setProductName("Linear");
   }
 

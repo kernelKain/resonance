@@ -1,6 +1,6 @@
 {
   "model": {
-    "name": "openrouter/nvidia-nemotron-3-ultra-550b-a-55b-free",
+    "name": "openrouter/minimax-minimax-m-3-free",
     "params": {
       "temperature": 0.1,
       "max_tokens": 16384
