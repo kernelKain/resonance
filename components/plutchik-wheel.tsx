@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore, useState, useCallback, useRef } from "react";
+import { useSyncExternalStore, useState, useCallback, useRef, useLayoutEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   PolarAngleAxis,
@@ -120,9 +120,13 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
   const isClient = useIsClient();
   const [hoveredKey, setHoveredKey] = useState<EmotionKey | null>(null);
 
-  // Stable callback via ref so Recharts tick re-renders don't lose the function
+  // Keep the ref in sync with the latest setter via useLayoutEffect,
+  // never during render, to satisfy react-hooks/refs.
   const setHoveredKeyRef = useRef(setHoveredKey);
-  setHoveredKeyRef.current = setHoveredKey;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally runs after every render to keep ref current
+  useLayoutEffect(() => {
+    setHoveredKeyRef.current = setHoveredKey;
+  });
   const onHoverChange = useCallback((key: EmotionKey | null) => {
     setHoveredKeyRef.current(key);
   }, []);

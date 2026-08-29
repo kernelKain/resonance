@@ -1,8 +1,22 @@
+/**
+ * A parsed CSV table with typed headers and row objects.
+ */
 export type CsvTable = {
   headers: string[];
   rows: Record<string, string>[];
 };
 
+/**
+ * Parses a CSV string into a {@link CsvTable}.
+ *
+ * Handles RFC-4180 quoted fields, escaped double-quotes (`""`), and both
+ * `\n` / `\r\n` line endings. Empty rows are silently skipped.
+ *
+ * @param text - Raw CSV text content.
+ * @returns Parsed table with `headers` (first row) and `rows` (remaining rows
+ *   as key→value objects keyed by header name).
+ * @throws {Error} If the CSV has no rows at all.
+ */
 export function parseCsv(text: string): CsvTable {
   const records: string[][] = [];
   let field = "";
@@ -74,6 +88,14 @@ export function parseCsv(text: string): CsvTable {
   return { headers, rows };
 }
 
+/**
+ * Validates that the CSV headers include a `review_text` column
+ * (matched case-insensitively, with spaces and hyphens normalised to `_`).
+ *
+ * @param headers - Array of column header strings from {@link parseCsv}.
+ * @returns The matched header string as it appears in the CSV.
+ * @throws {Error} If no matching column is found.
+ */
 export function requireReviewTextColumn(headers: string[]): string {
   const match = headers.find(
     (header) => header.toLowerCase().replace(/[\s-]/g, "_") === "review_text",

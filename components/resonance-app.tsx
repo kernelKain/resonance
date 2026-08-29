@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Terminal, Activity } from "lucide-react";
+import { Terminal } from "lucide-react";
 
 import { ApprovalModal } from "./approval-modal";
 import { InsightPanel } from "./insight-panel";

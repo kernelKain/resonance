@@ -1,3 +1,16 @@
+/**
+ * @file hooks/use-resonance-state.ts
+ *
+ * Central state management hook for the Resonance analysis pipeline.
+ *
+ * Orchestrates:
+ * - File upload to `/api/upload`
+ * - TrueForge session lifecycle (open → stream turn → HITL approval → done)
+ * - RAF-batched streaming of the assistant text to avoid render thrashing
+ * - Session persistence via `sessionStorage` so a page refresh restores results
+ * - Transcript accumulation for the live activity log
+ */
+
 import { useEffect, useRef, useState } from "react";
 import {
   emptyResonanceStream,
@@ -14,6 +27,13 @@ import {
 } from "@/lib/trueforge-events";
 import { readSse } from "@/hooks/use-sse-stream";
 
+/**
+ * A single item in the live transcript shown in the sidebar and activity log.
+ *
+ * `kind` determines the colour and visibility:
+ * - `user` / `assistant` — only shown in dev mode
+ * - `status` / `tool` / `subagent` / `error` — shown in the simplified activity log
+ */
 export type TranscriptItem = {
   id: string;
   kind: "user" | "assistant" | "status" | "tool" | "subagent" | "error";
@@ -22,10 +42,19 @@ export type TranscriptItem = {
 
 const HITL_PAUSE_MARKER = "<!-- HITL_PAUSE -->";
 
+/**
+ * Builds the excavation prompt sent to TrueForge.
+ * Encodes all necessary parameters (product, file path, row count) inline so
+ * the agent can start immediately without additional clarification.
+ */
 function excavationPrompt(productName: string, basename: string, rowCount: number) {
   return `Follow the Day 5 protocol for product "${productName}". CSV file is ${basename} (${rowCount} reviews). Read it with the filesystem MCP (basename only — never a demo_data/ prefix). Spawn a subagent to research the product with Exa. Score every row. Emit compact JSON (no pretty-print) in every resonance-data fence. Persist scored_reviews.json. Copy scripts/cluster.py into the TrueForge sandbox and run cluster.py there. Emit cluster_results VERBATIM from cluster.py. Then name one archetype per cluster and write 3–5 Hidden Asks with action_items null. Emit analysis_result with scored_reviews [] and cluster_results {}. Then emit approval_request and call ask_user_question with options Approved and Decline. Do not emit action_items until the user answers Approved.`;
 }
 
+/**
+ * Converts a raw TrueForge SSE event into a {@link TranscriptItem} if it is
+ * a user-facing event type. Returns `null` for events that should be silent.
+ */
 function summarizeEvent(event: Record<string, unknown>): TranscriptItem | null {
   const type = String(event.type ?? "");
   if (type === "turn.created") {
@@ -75,6 +104,7 @@ function summarizeEvent(event: Record<string, unknown>): TranscriptItem | null {
   return null;
 }
 
+/** Extracts the assistant text delta from a `model.message.delta` event on the main thread. */
 function deltaText(event: Record<string, unknown>): string {
   if (event.type !== "model.message.delta") return "";
   const threadId = String(event.thread_id ?? event.threadId ?? "main");
@@ -84,10 +114,17 @@ function deltaText(event: Record<string, unknown>): string {
   return "";
 }
 
+/** Promise-based sleep utility used when retrying failed API calls. */
 function sleep(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+/**
+ * Primary state hook for the Resonance application.
+ *
+ * Returns a state bag consumed by `resonance-app.tsx` containing all reactive
+ * values and action functions needed to drive the analysis pipeline.
+ */
 export function useResonanceState() {
   const [productName, setProductName] = useState("Linear");
   const [file, setFile] = useState<File | null>(null);
@@ -113,32 +150,35 @@ export function useResonanceState() {
   // On mount: rehydrate state from sessionStorage so a page refresh doesn't
   // erase the analysis results. File objects cannot be serialized so only
   // metadata and the assistant output are restored.
+  // State setters are deferred to rAF to satisfy react-hooks/set-state-in-effect.
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem("resonance_session");
-      if (!raw) return;
-      const saved = JSON.parse(raw) as {
-        productName?: string;
-        phase?: ResonancePhase;
-        assistant?: string;
-        uploadMeta?: { filePath: string; rowCount: number } | null;
-      };
-      if (saved.productName) setProductName(saved.productName);
-      if (saved.uploadMeta) setUploadMeta(saved.uploadMeta);
-      if (saved.assistant && saved.phase && saved.phase !== "idle") {
-        assistantRef.current = saved.assistant;
-        setAssistant(saved.assistant);
-        setStream(extractResonanceStream(saved.assistant));
-        // Restore phase as "done" if it was done or error so the workbench stays visible;
-        // running/awaiting states cannot be safely restored.
-        setPhase(
-          saved.phase === "done" || saved.phase === "error" ? saved.phase : "done",
-        );
+    const frame = requestAnimationFrame(() => {
+      try {
+        const raw = sessionStorage.getItem("resonance_session");
+        if (!raw) return;
+        const saved = JSON.parse(raw) as {
+          productName?: string;
+          phase?: ResonancePhase;
+          assistant?: string;
+          uploadMeta?: { filePath: string; rowCount: number } | null;
+        };
+        if (saved.productName) setProductName(saved.productName);
+        if (saved.uploadMeta) setUploadMeta(saved.uploadMeta);
+        if (saved.assistant && saved.phase && saved.phase !== "idle") {
+          assistantRef.current = saved.assistant;
+          setAssistant(saved.assistant);
+          setStream(extractResonanceStream(saved.assistant));
+          // Restore phase as "done" if it was done or error so the workbench stays visible;
+          // running/awaiting states cannot be safely restored.
+          setPhase(
+            saved.phase === "done" || saved.phase === "error" ? saved.phase : "done",
+          );
+        }
+      } catch {
+        // Silently ignore malformed session data
       }
-    } catch {
-      // Silently ignore malformed session data
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    });
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   /** Persist current state snapshot to sessionStorage. */
