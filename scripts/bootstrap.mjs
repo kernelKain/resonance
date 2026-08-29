@@ -77,7 +77,8 @@ async function upsertModelProvider() {
     method: "PUT",
     body: JSON.stringify({
       manifest: {
-        type: "openrouter",
+        type: "custom",
+        name: "openrouter",
         base_url: "https://openrouter.ai/api/v1",
         auth: { api_key: apiKey },
         models: openRouterModels(),
