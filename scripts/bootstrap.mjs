@@ -7,7 +7,7 @@ const TRUEFORGE = process.env.TRUEFORGE_BASE_URL ?? "http://127.0.0.1:8790";
 const AGENT_NAME = process.env.TRUEFORGE_AGENT_NAME ?? "resonance";
 const MCP_URL = process.env.MCP_URL ?? "http://127.0.0.1:8792/mcp";
 const MODEL_FQN =
-  process.env.TRUEFORGE_MODEL ?? "google-gemini/gemini-3-1-pro-preview";
+  process.env.TRUEFORGE_MODEL ?? "openrouter/nvidia-nemotron-3-ultra-550b-a-55b-free";
 
 function loadEnvFiles() {
   for (const filename of [".env", ".env.local"]) {
