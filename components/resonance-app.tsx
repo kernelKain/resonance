@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -278,7 +279,7 @@ export function ResonanceApp() {
       {
         id: crypto.randomUUID(),
         kind: "status",
-        text: "Replaying a recorded TrueForge stream. No model call.",
+        text: "Replaying a recorded analysis stream.",
       },
     ]);
 
@@ -310,7 +311,7 @@ export function ResonanceApp() {
       {
         id: crypto.randomUUID(),
         kind: "status",
-        text: "Replaying the Day 5 HITL fixture. No model call. The stream will pause for Approved.",
+        text: "Replaying a recorded analysis with approval checkpoint.",
       },
     ]);
 
@@ -341,7 +342,7 @@ export function ResonanceApp() {
         {
           id: crypto.randomUUID(),
           kind: "status",
-          text: "Replay paused. Click Approved to stream action_items.",
+          text: "Analysis paused. Approve to continue with recommendations.",
         },
       ]);
       setPhase("awaiting_approval");
@@ -535,16 +536,16 @@ export function ResonanceApp() {
   }
 
   const parsedLabel = stream.actionItems
-    ? "action_items"
+    ? "Complete"
     : stream.approval
-      ? "approval_request"
+      ? "Awaiting Approval"
       : stream.analysis
-        ? "analysis_result"
+        ? "Analyzing"
         : stream.clustered
-          ? "cluster_results"
+          ? "Clustering"
           : stream.scored
-            ? "scored_reviews"
-            : "none yet";
+            ? "Scoring"
+            : "Starting…";
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
@@ -565,26 +566,33 @@ export function ResonanceApp() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            <HealthDot ok={Boolean(health?.trueforge)} label="TrueForge :8790" />
-            <HealthDot ok={Boolean(health?.filesystemMcp)} label="Filesystem MCP" />
-            <HealthDot ok={Boolean(health?.agent)} label="Agent: resonance" />
-            <Badge className="font-mono text-[10px] tracking-wide uppercase">Day 5 HITL</Badge>
+            <HealthDot ok={Boolean(health?.trueforge)} label="Analysis Engine" />
+            <HealthDot ok={Boolean(health?.filesystemMcp)} label="File System" />
+            <HealthDot ok={Boolean(health?.agent)} label="Agent" />
+            <Badge className="font-mono text-[10px] tracking-wide uppercase">v0.1</Badge>
           </div>
         </div>
       </header>
 
       <main className="relative z-10 mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <section className="min-w-0">
+          <AnimatePresence mode="wait">
           {!showWorkbench ? (
+            <motion.div
+              key="upload"
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+            >
             <Card className="mx-auto max-w-xl border-cyan-400/20 bg-card/85 shadow-[0_0_90px_rgba(8,145,178,0.12)]">
               <CardHeader className="gap-3 px-6 pt-6">
                 <CardTitle className="text-3xl tracking-tight">
-                  Run a psychological excavation
+                  Analyze Customer Reviews
                 </CardTitle>
                 <CardDescription className="text-[0.95rem] leading-7">
-                  Standard sentiment tools flatten reviews into three buckets. Resonance reads
-                  the file through TrueForge MCP, then pauses for your approval before any
-                  product-roadmap recommendations.
+                  Go beyond simple sentiment. Resonance uncovers the emotional subtext, hidden
+                  needs, and conflicting feelings in your customer reviews.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6 px-6 pb-6">
@@ -652,39 +660,47 @@ export function ResonanceApp() {
                     ) : (
                       <Sparkles className="size-4" />
                     )}
-                    Run Psychological Excavation
+                    Run Analysis
                   </Button>
-                  <Button size="lg" variant="outline" onClick={() => void loadScoringFixture()}>
-                    Use scoring fixture
-                  </Button>
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
                   <Button size="lg" variant="outline" className="flex-1" onClick={() => void loadSample()}>
-                    Use 18-row sample CSV
-                  </Button>
-                  <Button size="lg" variant="outline" className="flex-1" onClick={() => void replayFixture()}>
-                    Replay parsed fixture
-                  </Button>
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button size="lg" variant="outline" className="flex-1" onClick={() => void replayHitlFixture()}>
-                    Replay HITL fixture
-                  </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="flex-1"
-                    disabled={!harnessReady}
-                    onClick={() => void runHitlSmoke()}
-                  >
-                    HITL smoke (live)
+                    Try Sample Data
                   </Button>
                 </div>
 
+                <details className="group">
+                  <summary className="cursor-pointer font-mono text-[11px] tracking-[0.14em] text-muted-foreground uppercase transition-colors hover:text-cyan-200">
+                    Developer Tools
+                  </summary>
+                  <div className="mt-3 space-y-2">
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <Button size="lg" variant="outline" className="flex-1" onClick={() => void loadScoringFixture()}>
+                        Use scoring fixture
+                      </Button>
+                      <Button size="lg" variant="outline" className="flex-1" onClick={() => void replayFixture()}>
+                        Replay parsed fixture
+                      </Button>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <Button size="lg" variant="outline" className="flex-1" onClick={() => void replayHitlFixture()}>
+                        Replay HITL fixture
+                      </Button>
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="flex-1"
+                        disabled={!harnessReady}
+                        onClick={() => void runHitlSmoke()}
+                      >
+                        HITL smoke (live)
+                      </Button>
+                    </div>
+                  </div>
+                </details>
+
                 {!harnessReady ? (
                   <p className="rounded-lg border border-amber-400/25 bg-amber-400/8 px-3.5 py-3 text-xs leading-5 text-amber-100">
-                    Harness is not fully up. Replay HITL fixture works without it. For a live
-                    pause, start TrueForge on :8790, the filesystem MCP, then run{" "}
+                    Analysis engine is not connected. Fixture replays still work. To run live
+                    analysis, ensure all services are running and execute{" "}
                     <code className="font-mono text-cyan-200">npm run bootstrap</code>.
                   </p>
                 ) : null}
@@ -697,12 +713,20 @@ export function ResonanceApp() {
                 ) : null}
               </CardContent>
             </Card>
+            </motion.div>
           ) : (
+            <motion.div
+              key="workbench"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
             <div className="space-y-5">
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <div className="min-w-0">
                   <p className="font-mono text-[11px] tracking-[0.24em] text-cyan-300 uppercase">
-                    Live excavation
+                    Live analysis
                   </p>
                   <h2 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
                     {productName}
@@ -723,25 +747,25 @@ export function ResonanceApp() {
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <Metric label="Reviews on disk" value={uploadMeta ? String(uploadMeta.rowCount) : "—"} />
+                <Metric label="Total Reviews" value={uploadMeta ? String(uploadMeta.rowCount) : "—"} />
                 <Metric
-                  label="Scored in state"
+                  label="Reviews Analyzed"
                   value={stream.scored ? String(stream.scored.total_reviews) : "—"}
                 />
                 <Metric
-                  label="Clusters k"
+                  label="Customer Segments"
                   value={stream.clustered ? String(stream.clustered.num_clusters) : "—"}
                 />
-                <Metric label="Latest payload" value={parsedLabel} />
+                <Metric label="Current Stage" value={parsedLabel} />
               </div>
 
               <div className="grid gap-3 sm:grid-cols-3">
                 <Metric
-                  label="Archetypes"
+                  label="Segments"
                   value={stream.analysis ? String(stream.analysis.archetypes.length) : "—"}
                 />
                 <Metric
-                  label="Hidden Asks"
+                  label="Unspoken Needs"
                   value={stream.analysis ? String(stream.analysis.hidden_asks.length) : "—"}
                 />
                 <Metric
@@ -763,8 +787,7 @@ export function ResonanceApp() {
                     Agent output
                   </CardTitle>
                   <CardDescription className="leading-6">
-                    SSE text is parsed into React state as each resonance-data fence closes.
-                    The wheel and cards above read those payloads.
+                    Results appear in real-time as the analysis progresses.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -783,32 +806,33 @@ export function ResonanceApp() {
                   )}
                   {stream.parseErrors.length ? (
                     <p className="mt-4 text-xs leading-5 text-amber-200">
-                      Parser skipped {stream.parseErrors.length} malformed fence
-                      {stream.parseErrors.length === 1 ? "" : "s"} and kept going.
+                      Skipped {stream.parseErrors.length} incomplete data section
+                      {stream.parseErrors.length === 1 ? "" : "s"}.
                     </p>
                   ) : null}
                   {phase === "done" ? (
                     <p className="mt-5 flex items-center gap-2 text-xs leading-5 text-cyan-200">
                       <CheckCircle2 className="size-3.5" />
                       {stream.actionItems
-                        ? "Day 5 done-when: analysis paused, you approved, recommendations rendered."
-                        : "Turn finished without action_items. If you declined, that is expected."}
+                        ? "Analysis complete — recommendations are ready."
+                        : "Analysis complete."}
                     </p>
                   ) : null}
                   {error ? <p className="mt-4 text-sm leading-6 text-rose-300">{error}</p> : null}
                 </CardContent>
               </Card>
             </div>
+            </motion.div>
           )}
+          </AnimatePresence>
         </section>
 
         <aside className="min-h-[28rem]">
           <Card className="flex h-full flex-col border-cyan-400/15 bg-card/85">
             <CardHeader className="border-b border-cyan-400/10">
-              <CardTitle className="text-lg tracking-tight">TrueForge transcript</CardTitle>
+              <CardTitle className="text-lg tracking-tight">Activity Log</CardTitle>
               <CardDescription className="leading-6">
-                This is the harness loop, not a chatbot wrapper. Tool calls, the HITL pause,
-                and subagents show up here.
+                Live analysis activity — tool calls, approvals, and processing steps.
               </CardDescription>
             </CardHeader>
             <CardContent className="min-h-0 flex-1 p-0">
@@ -816,8 +840,7 @@ export function ResonanceApp() {
                 <div className="space-y-3">
                   {transcript.length === 0 && !assistant ? (
                     <p className="text-sm leading-6 text-muted-foreground">
-                      Waiting for a run. After you click excavate, session create → turn
-                      stream events land here.
+                      Waiting for analysis to begin.
                     </p>
                   ) : null}
                   {transcript.map((item) => (

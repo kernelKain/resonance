@@ -43,7 +43,7 @@ export function ApprovalModal({
       <DialogContent className="border border-cyan-400/25 bg-zinc-950/95 p-5 shadow-[0_0_90px_rgba(8,145,178,0.22)] sm:max-w-lg">
         <DialogHeader className="gap-3">
           <p className="font-mono text-[11px] tracking-[0.32em] text-cyan-300 uppercase">
-            Human in the loop
+            Your Decision Required
           </p>
           <DialogTitle className="flex items-center gap-2 text-2xl tracking-tight">
             <ShieldAlert className="size-5 text-orange-300" />
@@ -66,10 +66,14 @@ export function ApprovalModal({
           </ul>
         ) : null}
 
+        <p className="text-xs leading-5 text-zinc-400">
+          The analysis has identified hidden customer needs. Approve to generate specific product
+          recommendations, or decline to end with just the findings.
+        </p>
+
         {!ready ? (
           <p className="text-xs leading-5 text-amber-200">
-            Waiting for TrueForge to pause on ask_user_question. Approve stays disabled until
-            the harness sends tool.response_required.
+            Connecting to analysis checkpoint…
           </p>
         ) : null}
 
@@ -79,7 +83,7 @@ export function ApprovalModal({
           </Button>
           <Button size="lg" disabled={busy || !ready} onClick={() => onApprove()}>
             {busy ? <Loader2 className="size-4 animate-spin" /> : null}
-            Approved
+            Approve
           </Button>
         </DialogFooter>
       </DialogContent>

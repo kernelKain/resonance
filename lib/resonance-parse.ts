@@ -217,7 +217,7 @@ export function statusTextFromStream(
   phase: ResonancePhase,
   error: string | null,
 ): string {
-  if (phase === "uploading") return "Saving CSV to the shared volume…";
+  if (phase === "uploading") return "Uploading your reviews…";
   if (phase === "error") return error ?? "Something broke.";
   if (stream.actionItems) {
     return `Recommendations ready: ${stream.actionItems.items.length} action items.`;
@@ -225,25 +225,25 @@ export function statusTextFromStream(
   if (phase === "awaiting_approval" || (stream.approval && !stream.actionItems)) {
     return (
       stream.approval?.message ??
-      "TrueForge paused. Approve to generate product-roadmap recommendations."
+      "Analysis paused — approve to generate recommendations."
     );
   }
   if (stream.analysis) {
-    return `Parsed analysis: ${stream.analysis.archetypes.length} archetypes, ${stream.analysis.hidden_asks.length} Hidden Asks.`;
+    return `Found ${stream.analysis.archetypes.length} customer segments and ${stream.analysis.hidden_asks.length} unspoken needs.`;
   }
   if (stream.clustered) {
-    return `Sandbox clustering returned k=${stream.clustered.num_clusters} (silhouette ${stream.clustered.silhouette_score}).`;
+    return `Identified ${stream.clustered.num_clusters} distinct customer segments.`;
   }
   if (stream.scored) {
-    return `Scored ${stream.scored.total_reviews} reviews. Waiting on sandbox clustering…`;
+    return `Scored ${stream.scored.total_reviews} reviews. Grouping into segments…`;
   }
   if (phase === "running") {
-    return "TrueForge is working: filesystem MCP → research subagent → scoring → sandbox → HITL pause.";
+    return "Analyzing reviews — this may take a minute…";
   }
   if (phase === "done") {
     return stream.scored
-      ? "Stream finished. Parsed payloads are in React state."
-      : "Turn finished, but no resonance-data fences were parsed.";
+      ? "Analysis complete."
+      : "Analysis finished — no structured data was produced.";
   }
-  return "Upload a reviews CSV. The agent will read it through MCP — not from this browser.";
+  return "Upload a reviews CSV to begin analysis.";
 }
