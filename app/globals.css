@@ -245,3 +245,65 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* ── Logo animation ─────────────────────────────────────────────────────────── */
+@keyframes logo-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.logo-outer-ring {
+  animation: logo-spin 90s linear infinite;
+  transform-origin: center;
+}
+
+/* ── Print / PDF export ──────────────────────────────────────────────────────── */
+@media print {
+  /* Hide UI chrome that should not appear in the PDF */
+  header,
+  .no-print,
+  [data-slot="button"],
+  .transcript-sidebar,
+  nav {
+    display: none !important;
+  }
+
+  /* Force white background and black text for readability */
+  body,
+  .bg-background,
+  .glass-surface,
+  [class*="bg-card"],
+  [class*="bg-slate"] {
+    background: white !important;
+    color: black !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Reset gradient text so it prints as solid colour */
+  .heading-gradient {
+    -webkit-text-fill-color: oklch(0.2 0.08 205);
+    background: none;
+  }
+
+  /* Let cards and grids reflow to full width for print */
+  .grid { display: block !important; }
+  article,
+  [data-slot="card"] {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 1rem;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 0.5rem;
+    padding: 1rem;
+  }
+
+  /* Ensure SVG charts scale correctly */
+  svg { max-width: 100% !important; height: auto !important; }
+
+  /* Page size and margins */
+  @page {
+    size: A4;
+    margin: 18mm 16mm;
+  }
+}
