@@ -43,6 +43,24 @@ export type TranscriptItem = {
 const HITL_PAUSE_MARKER = "<!-- HITL_PAUSE -->";
 
 /**
+ * Derives a short human-readable display name from either a plain product name
+ * or a URL. For URLs we extract the hostname (minus www.) and the first path
+ * segment if present, e.g. "https://www.amazon.com/dp/B09XYZ" → "amazon.com".
+ */
+function deriveDisplayName(productName: string): string {
+  const trimmed = productName.trim();
+  try {
+    const url = new URL(trimmed);
+    const host = url.hostname.replace(/^www\./, "");
+    const firstSegment = url.pathname.split("/").filter(Boolean)[0];
+    return firstSegment ? `${host}/${firstSegment}` : host;
+  } catch {
+    // Not a URL — use as-is
+    return trimmed;
+  }
+}
+
+/**
  * Builds the excavation prompt sent to TrueForge.
  * Encodes all necessary parameters (product, file path, row count) inline so
  * the agent can start immediately without additional clarification.
@@ -126,7 +144,7 @@ function sleep(ms: number) {
  * values and action functions needed to drive the analysis pipeline.
  */
 export function useResonanceState() {
-  const [productName, setProductName] = useState("Linear");
+  const [productName, setProductName] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [phase, setPhase] = useState<ResonancePhase>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -136,6 +154,7 @@ export function useResonanceState() {
   const [uploadMeta, setUploadMeta] = useState<{
     filePath: string;
     rowCount: number;
+    filteredRowCount?: number;
   } | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [pendingQuestion, setPendingQuestion] = useState<PendingUserQuestion | null>(null);
@@ -160,7 +179,7 @@ export function useResonanceState() {
           productName?: string;
           phase?: ResonancePhase;
           assistant?: string;
-          uploadMeta?: { filePath: string; rowCount: number } | null;
+          uploadMeta?: { filePath: string; rowCount: number; filteredRowCount?: number } | null;
         };
         if (saved.productName) setProductName(saved.productName);
         if (saved.uploadMeta) setUploadMeta(saved.uploadMeta);
@@ -186,7 +205,7 @@ export function useResonanceState() {
     name: string,
     currentPhase: ResonancePhase,
     assistantText: string,
-    meta: { filePath: string; rowCount: number } | null,
+    meta: { filePath: string; rowCount: number; filteredRowCount?: number } | null,
   ) {
     try {
       sessionStorage.setItem(
@@ -425,20 +444,25 @@ export function useResonanceState() {
         filePath?: string;
         filename?: string;
         rowCount?: number;
+        filteredRowCount?: number;
       };
       if (!uploaded.ok || !uploadJson.success || !uploadJson.filePath) {
         throw new Error(uploadJson.error ?? "Upload failed.");
       }
 
+      const effectiveRowCount = uploadJson.filteredRowCount ?? uploadJson.rowCount ?? 0;
       setUploadMeta({
         filePath: uploadJson.filePath,
         rowCount: uploadJson.rowCount ?? 0,
+        filteredRowCount: uploadJson.filteredRowCount,
       });
 
       const nextSessionId = await openSession();
       const basename =
         uploadJson.filename ?? uploadJson.filePath.split("/").pop() ?? file.name;
-      const message = excavationPrompt(productName.trim(), basename, uploadJson.rowCount ?? 0);
+      // Use the display-safe name in the prompt (resolves raw URLs to hostname)
+      const displayName = deriveDisplayName(productName) || basename;
+      const message = excavationPrompt(displayName, basename, effectiveRowCount);
 
       setTranscript([
         {

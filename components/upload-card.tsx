@@ -112,12 +112,14 @@ export function UploadCard({
             Required column: <code className="font-mono text-cyan-200">review_text</code>.
             Optional: rating, date, author.
           </p>
-          <input
-            className="mt-5 block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-cyan-400 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-950"
-            type="file"
-            accept=".csv,text/csv"
-            onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-          />
+          <div className="mt-5 flex justify-center">
+            <input
+              className="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-cyan-400 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-950"
+              type="file"
+              accept=".csv,text/csv"
+              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+            />
+          </div>
           {file ? (
             <p className="mt-4 flex items-center justify-center gap-2 text-xs text-cyan-100">
               <FileSpreadsheet className="size-3.5" />
