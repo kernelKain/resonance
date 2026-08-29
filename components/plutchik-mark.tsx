@@ -1,12 +1,12 @@
 const EMOTIONS = [
-  { name: "Joy", color: "#f5d76e" },
-  { name: "Trust", color: "#5ee0a0" },
-  { name: "Fear", color: "#7dffb3" },
-  { name: "Surprise", color: "#67e8f9" },
-  { name: "Sadness", color: "#60a5fa" },
-  { name: "Disgust", color: "#c084fc" },
-  { name: "Anger", color: "#fb7185" },
-  { name: "Anticipation", color: "#fb923c" },
+  { name: "Joy", color: "var(--color-emotion-joy, #f5d76e)" },
+  { name: "Trust", color: "var(--color-emotion-trust, #5ee0a0)" },
+  { name: "Fear", color: "var(--color-emotion-fear, #7dffb3)" },
+  { name: "Surprise", color: "var(--color-emotion-surprise, #67e8f9)" },
+  { name: "Sadness", color: "var(--color-emotion-sadness, #60a5fa)" },
+  { name: "Disgust", color: "var(--color-emotion-disgust, #c084fc)" },
+  { name: "Anger", color: "var(--color-emotion-anger, #fb7185)" },
+  { name: "Anticipation", color: "var(--color-emotion-anticipation, #fb923c)" },
 ] as const;
 
 export function PlutchikMark({ className }: { className?: string }) {

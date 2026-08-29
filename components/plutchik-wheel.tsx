@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { motion } from "framer-motion";
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -19,6 +20,7 @@ import {
   resolveAverageScores,
   toRadarPoints,
 } from "@/lib/plutchik";
+import { InfoTooltip } from "@/components/info-tooltip";
 import type { EmotionKey } from "@/lib/resonance-types";
 import { cn } from "@/lib/utils";
 
@@ -63,53 +65,97 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
   const points = scores ? toRadarPoints(scores) : [];
   const dominant = scores ? dominantEmotion(scores) : null;
   const source = stream.analysis?.emotion_summary?.average_scores
-    ? "analysis_result averages"
+    ? "overall analysis"
     : stream.scored
-      ? "mean of scored_reviews"
+      ? "review scores"
       : null;
 
   return (
     <Card className="border-cyan-400/20 bg-card/80 shadow-[0_0_60px_rgba(8,145,178,0.08)]">
       <CardHeader className="gap-2">
-        <CardTitle className="text-lg tracking-tight">Plutchik emotion wheel</CardTitle>
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-lg tracking-tight">Emotion Profile</CardTitle>
+          <InfoTooltip content="Plutchik's Wheel of Emotions maps 8 core emotions. This profile shows the aggregate emotional footprint of your customers' reviews." />
+        </div>
         <CardDescription className="leading-6">
           {scores
             ? `Eight-dimension profile from ${source}. Dominant: ${dominant ? EMOTION_LABELS[dominant] : "—"}.`
-            : "Waiting for the first resonance-data fence. The polygon appears as soon as reviews are scored."}
+            : "Emotion profiles will appear here once the analysis begins."}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_11.5rem]">
           <div className="h-[320px] w-full sm:h-[400px]">
             {isClient && scores ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={points} cx="50%" cy="50%" outerRadius="72%">
-                  <PolarGrid stroke="rgba(34,211,238,0.22)" />
-                  <PolarAngleAxis dataKey="axis" tick={<EmotionTick />} tickLine={false} />
-                  <PolarRadiusAxis
-                    domain={[0, 1]}
-                    tickCount={5}
-                    tick={{ fill: "rgba(148,163,184,0.7)", fontSize: 10 }}
-                    axisLine={false}
-                  />
-                  <Radar
-                    name="Plutchik"
-                    dataKey="value"
-                    stroke="#67e8f9"
-                    fill="#22d3ee"
-                    fillOpacity={0.32}
-                    strokeWidth={2.4}
-                    isAnimationActive
-                    animationDuration={700}
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 20, duration: 0.4 }}
+                className="h-full w-full"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart data={points} cx="50%" cy="50%" outerRadius="72%">
+                    <defs>
+                      <linearGradient id="radarGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.5} />
+                        <stop offset="100%" stopColor="#0891b2" stopOpacity={0.3} />
+                      </linearGradient>
+                      <filter id="radarGlow">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feMerge>
+                          <feMergeNode in="blur" />
+                          <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                      </filter>
+                    </defs>
+                    <PolarGrid stroke="rgba(34,211,238,0.22)" />
+                    <PolarAngleAxis dataKey="axis" tick={<EmotionTick />} tickLine={false} />
+                    <PolarRadiusAxis
+                      domain={[0, 1]}
+                      tickCount={5}
+                      tick={{ fill: "rgba(148,163,184,0.7)", fontSize: 10 }}
+                      axisLine={false}
+                    />
+                    <Radar
+                      name="Plutchik"
+                      dataKey="value"
+                      stroke="#67e8f9"
+                      fill="url(#radarGradient)"
+                      fillOpacity={0.45}
+                      strokeWidth={2.4}
+                      isAnimationActive
+                      animationDuration={700}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </motion.div>
             ) : (
               <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-cyan-400/25 bg-background/40">
                 <p className="font-mono text-[11px] tracking-[0.22em] text-cyan-200/70 uppercase">
                   Awaiting Plutchik vectors
                 </p>
               </div>
+            )}
+            
+            {/* Screen reader only data table */}
+            {scores && (
+              <table className="sr-only">
+                <caption>Emotion scores from {source}</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Emotion</th>
+                    <th scope="col">Score (0 to 1)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {points.map((p) => (
+                    <tr key={p.axis}>
+                      <td>{p.axis}</td>
+                      <td>{p.value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
 
@@ -138,8 +184,11 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
                 >
                   <p className="flex items-center gap-2 font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
                     <span
-                      className="size-2 rounded-full"
-                      style={{ background: EMOTION_COLORS[key] }}
+                      className={cn(
+                        "size-2 rounded-full",
+                        key === dominant && "shadow-[0_0_8px_currentColor] animate-pulse"
+                      )}
+                      style={{ background: EMOTION_COLORS[key], color: EMOTION_COLORS[key] }}
                     />
                     {EMOTION_LABELS[key]}
                   </p>
