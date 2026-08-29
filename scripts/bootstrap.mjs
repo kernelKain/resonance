@@ -52,14 +52,14 @@ async function tf(pathname, init = {}) {
 function openRouterModels() {
   return [
     {
-      model_id: "nvidia/nemotron-3-ultra",
-      name: "nemotron-3-ultra",
-      properties: { context_length: 1000000, max_output_tokens: 16384 },
+      model_id: "nvidia/nemotron-3-ultra-550b-a55b:free",
+      name: "nvidia-nemotron-3-ultra-550b-a-55b-free",
+      properties: { context_length: 1000000, max_output_tokens: 65536 },
     },
     {
-      model_id: "glm-5.2",
-      name: "glm-5-2",
-      properties: { context_length: 256000, max_output_tokens: 8192 },
+      model_id: "minimax/minimax-m3:free",
+      name: "minimax-minimax-m-3-free",
+      properties: { context_length: 1048576, max_output_tokens: 65536 },
     },
   ];
 }
@@ -78,6 +78,7 @@ async function upsertModelProvider() {
     body: JSON.stringify({
       manifest: {
         type: "openrouter",
+        base_url: "https://openrouter.ai/api/v1",
         auth: { api_key: apiKey },
         models: openRouterModels(),
       },
