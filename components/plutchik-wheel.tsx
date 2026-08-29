@@ -136,6 +136,27 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
                 </p>
               </div>
             )}
+            
+            {/* Screen reader only data table */}
+            {scores && (
+              <table className="sr-only">
+                <caption>Emotion scores from {source}</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Emotion</th>
+                    <th scope="col">Score (0 to 1)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {points.map((p) => (
+                    <tr key={p.axis}>
+                      <td>{p.axis}</td>
+                      <td>{p.value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
 
           <ul className="grid grid-cols-2 gap-2 lg:grid-cols-1">

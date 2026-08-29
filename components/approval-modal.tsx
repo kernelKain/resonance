@@ -40,7 +40,7 @@ export function ApprovalModal({
         if (!next) return;
       }}
     >
-      <DialogContent className="border border-cyan-400/25 bg-zinc-950/95 p-5 shadow-[0_0_90px_rgba(8,145,178,0.22)] sm:max-w-lg">
+      <DialogContent className="noise-texture glass-surface border border-cyan-400/25 bg-zinc-950/80 p-5 shadow-[0_0_90px_rgba(8,145,178,0.3),inset_0_0_30px_rgba(34,211,238,0.1)] sm:max-w-lg data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-open:slide-in-from-bottom-2 duration-300">
         <DialogHeader className="gap-3">
           <p className="font-mono text-[11px] tracking-[0.32em] text-cyan-300 uppercase">
             Your Decision Required

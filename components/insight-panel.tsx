@@ -40,7 +40,10 @@ function EmptyHint({ children }: { children: string }) {
 
 function ArchetypeCard({ archetype }: { archetype: ArchetypeCardModel }) {
   return (
-    <article className="rounded-xl border border-cyan-400/15 bg-background/50 p-5">
+    <article 
+      tabIndex={0} 
+      className="rounded-xl border border-cyan-400/15 bg-background/50 p-5 outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-mono text-[10px] tracking-[0.2em] text-cyan-300/80 uppercase">
@@ -99,7 +102,10 @@ function ArchetypeCard({ archetype }: { archetype: ArchetypeCardModel }) {
 
 function HiddenAskCard({ ask }: { ask: HiddenAsk }) {
   return (
-    <article className="rounded-xl border border-orange-400/20 bg-orange-400/8 p-5">
+    <article 
+      tabIndex={0} 
+      className="rounded-xl border border-orange-400/20 bg-orange-400/8 p-5 outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h3 className="text-lg font-semibold tracking-tight">{ask.title}</h3>
         <div className="flex items-center gap-2">
@@ -119,7 +125,10 @@ function HiddenAskCard({ ask }: { ask: HiddenAsk }) {
 
 function DissonanceCard({ alert }: { alert: DissonanceAlert }) {
   return (
-    <article className="rounded-xl border border-rose-400/25 bg-rose-400/8 p-5">
+    <article 
+      tabIndex={0} 
+      className="rounded-xl border border-rose-400/25 bg-rose-400/8 p-5 outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
       <div className="flex flex-wrap items-center gap-2">
         <AlertTriangle className="size-3.5 text-orange-300" />
         <Badge variant="destructive" className="font-mono text-[10px] tracking-wide uppercase">
@@ -153,7 +162,10 @@ function ActionItemCard({
   effort: string;
 }) {
   return (
-    <article className="rounded-xl border border-cyan-400/25 bg-cyan-400/8 p-5 shadow-[inset_3px_0_0_0_rgba(34,211,238,0.7)]">
+    <article 
+      tabIndex={0} 
+      className="rounded-xl border border-cyan-400/25 bg-cyan-400/8 p-5 shadow-[inset_3px_0_0_0_rgba(34,211,238,0.7)] outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h3 className="text-lg font-semibold tracking-tight">{hiddenAsk}</h3>
         <div className="flex items-center gap-2">
