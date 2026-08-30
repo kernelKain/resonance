@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """K-means clustering over Plutchik 8-D emotion vectors.
 
-Reads a Resonance scored_reviews JSON payload (Day 2 contract), selects k in
+Reads a Resonance scored_reviews JSON payload, selects k in
 [k_min, k_max] by silhouette score, and writes a cluster_results JSON object.
 
 This script is the math that later runs inside the TrueForge sandbox. It does
@@ -218,7 +218,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--input",
         "-i",
         required=True,
-        help="Path to scored_reviews JSON (Day 2 contract).",
+        help="Path to scored_reviews JSON.",
     )
     parser.add_argument(
         "--output",

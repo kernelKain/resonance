@@ -2,6 +2,9 @@
 
 > **Customer emotion archaeology powered by Plutchik's Wheel**
 
+[![CI](https://github.com/kernelKain/resonance/actions/workflows/ci.yml/badge.svg)](https://github.com/kernelKain/resonance/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-cyan.svg)](LICENSE)
+
 Resonance does not classify reviews as positive, negative, or neutral. It scores each review on Plutchik's eight emotions, flags cognitive dissonance, maps an unmet Maslow need, clusters the emotion vectors in a TrueForge sandbox, names psychological archetypes, writes Hidden Asks — then **pauses for a human** before any product-roadmap recommendation is emitted.
 
 Built for [The Agent Harness Hackathon](https://wemakedevs.org/) on the TrueForge harness (filesystem MCP, Exa web search, Daytona sandbox, `ask_user_question`).
@@ -10,7 +13,63 @@ Built for [The Agent Harness Hackathon](https://wemakedevs.org/) on the TrueForg
 
 ## Screenshots
 
-> _Upload your CSV → watch the Plutchik wheel fill in real-time → approve the analysis → get actionable recommendations._
+<p align="center">
+  <img src="demo_data/Results/Linear/emotion-profile.png" alt="Linear analysis — Plutchik emotion profile and customer segments" />
+</p>
+
+<p align="center">
+  <img src="demo_data/Results/Zomato/emotion-profile.png" alt="Eight-dimension Plutchik emotion profile" width="48%" />
+  &nbsp;
+  <img src="demo_data/Results/Zomato/segments.png" alt="Psychological archetype segment card" width="48%" />
+</p>
+
+<p align="center">
+  <img src="demo_data/Results/Zomato/approval.png" alt="Human-in-the-loop approval gate before recommendations" width="48%" />
+  &nbsp;
+  <img src="demo_data/Results/Zomato/recommendations.png" alt="Roadmap recommendations after approval" width="48%" />
+</p>
+
+<p align="center">
+  <img src="demo_data/Results/Zomato/unspoken-needs.png" alt="Hidden Asks — unmet needs no review filed as a ticket" width="48%" />
+  &nbsp;
+  <img src="demo_data/Results/Zomato/red-flags.png" alt="Cognitive dissonance red flags on individual reviews" width="48%" />
+</p>
+
+<p align="center">
+  <img src="demo_data/Results/Zomato/executive-summary.png" alt="Executive summary with PDF export" width="48%" />
+  &nbsp;
+  <img src="demo_data/Results/Zomato/light-mode.png" alt="Light-mode workbench" width="48%" />
+</p>
+
+Upload a CSV → watch the Plutchik wheel fill in real time → approve the analysis → export a dark-theme PDF.
+
+More captures, input CSVs, and PDFs: [`demo_data/Results/`](demo_data/Results/).
+
+---
+
+## Sample analyses
+
+| Product | Dataset | Report |
+| --- | --- | --- |
+| Linear | [`hero_reviews.csv`](demo_data/Results/Linear/hero_reviews.csv) | [PDF](demo_data/Results/Linear/linear-resonance-report.pdf) |
+| Zomato | [`zomato_reviews.csv`](demo_data/Results/Zomato/zomato_reviews.csv) | [PDF](demo_data/Results/Zomato/zomato-resonance-report.pdf) |
+| Cursor Origin | [`origin_reviews.csv`](demo_data/Results/Cursor/origin_reviews.csv) | [PDF](demo_data/Results/Cursor/cursor-resonance-report.pdf) |
+
+Click **Load demo dataset** in the UI to run the Linear sample without preparing a file.
+
+---
+
+## Harness usage
+
+What judges should look for — Resonance uses the TrueForge capabilities instead of collapsing them into a single LLM call.
+
+| Capability | What Resonance does with it |
+| --- | --- |
+| **Filesystem MCP** | Reads the uploaded CSV by basename; writes `scored_reviews.json`, `cluster_results.json`, `full_analysis.json`, `action_items.json`. |
+| **Exa web search** | A subagent researches the product so “I love it” is interpreted in category context. |
+| **Daytona sandbox** | `scripts/cluster.py` (k-means, silhouette-selected k in 3–5) runs **inside** the sandbox. The laptop filesystem is not visible to Daytona. |
+| **`ask_user_question`** | HITL interrupt after Hidden Asks. Roadmap `action_items` are emitted only after **Approved**. |
+| **Dynamic subagents** | Product research is delegated; scoring, clustering, and the approval gate stay on the root agent. |
 
 ---
 
@@ -130,26 +189,33 @@ Use `npm run dev` when you only need the Next.js UI.
 
 ### 4. Start TrueForge
 
-Follow the TrueForge documentation to start the harness with the `resonance` agent configuration from `agent.json`.
+Follow the TrueForge documentation to start the harness with the `resonance` agent configuration from `agent.json`. Then register the agent:
+
+```bash
+npm run harness
+npm run bootstrap
+```
 
 ---
 
 ## Usage
 
 1. **Enter a product name or URL** in the upload card — this gives the Exa subagent context.
-2. **Upload a CSV** with at least a `review_text` column (UTF-8, any line endings).
+2. **Upload a CSV** with at least a `review_text` column (UTF-8, any line endings), or click **Load demo dataset**.
 3. Watch the **Live Analysis** stepper — each stage shows a contextual hint explaining what the AI is doing.
 4. When the agent reaches **Approval**, review the archetypes and Hidden Asks in the panel.
 5. Click **Approve** (or **Decline** to abort). Recommendations are only generated after Approve.
 6. Use **Export PDF** to download the complete dark-theme report.
 
+No reviews of your own? Use **Copy CSV generator prompt**, paste it into ChatGPT with a product URL, and upload the CSV it returns.
+
 ### Keyboard shortcut
 
 | Key | Action |
 | --- | --- |
-| `Ctrl + D` | Toggle Developer mode — shows raw agent output and health status dots |
+| `Ctrl + D` | Toggle Developer mode — raw agent output, health dots, and fixture replays |
 
-The **Dev** button in the header provides the same toggle for mouse users.
+The **Dev** button in the header provides the same toggle for mouse users. Fixture replays work even when TrueForge is not connected, so you can walk the UI without API keys.
 
 ### Model continuity
 
@@ -177,7 +243,7 @@ review_text,rating,date,author
 - `author` — optional display name
 - Uploads are capped at **50 concise reviews** per run (short rows preferred). Extra rows are dropped.
 
-A sample dataset ships at `public/demo/hero_reviews.csv`. Click **Load sample** on the upload card to try it without your own data.
+A sample dataset ships at `public/demo/hero_reviews.csv`. Click **Load demo dataset** on the upload card to try it without your own data.
 
 ---
 
@@ -186,35 +252,20 @@ A sample dataset ships at `public/demo/hero_reviews.csv`. Click **Load sample** 
 ```text
 resonance/
 ├── app/                    # Next.js App Router
-│   ├── api/                # Route handlers: upload, session, turn, health
-│   ├── globals.css         # Tailwind base, keyframes, @media print
-│   └── layout.tsx          # Root layout (Geist font, dark theme)
-├── components/
-│   ├── resonance-app.tsx   # Root app shell — state wiring + layout
-│   ├── upload-card.tsx     # File drop / URL input card
-│   ├── plutchik-wheel.tsx  # Radar chart + emotion list (bidirectional hover)
-│   ├── insight-panel.tsx   # Tabbed panel: Segments / Needs / Red Flags / Recs
-│   ├── agent-output.tsx    # Live Analysis card — stepper + activity log
-│   ├── analysis-progress.tsx # 6-step progress stepper with contextual hints
-│   ├── results-summary.tsx # Executive Summary + structured PDF export
-│   ├── pdf/                # Branded, paginated dark-theme PDF document
-│   ├── transcript-sidebar.tsx # Dev-mode raw transcript
-│   ├── plutchik-mark.tsx   # Animated SVG logo (dual-ring Plutchik wheel)
-│   ├── approval-modal.tsx  # HITL Approve / Decline dialog
-│   ├── info-tooltip.tsx    # Click-to-open info popover (portal, z-index safe)
-│   └── ...
-├── hooks/
-│   ├── use-resonance-state.ts # Central state + streaming + session persistence
-│   └── use-health-polling.ts  # Background health-check poller
-├── lib/
-│   ├── resonance-parse.ts  # SSE stream parser → structured ResonanceStreamState
-│   ├── plutchik.ts         # Emotion utilities (scores, colours, labels, radar points)
-│   ├── csv.ts              # RFC-4180 CSV parser + column validator
-│   └── ...
+│   ├── api/                # upload, session, turn, health, product metadata
+│   ├── globals.css
+│   └── layout.tsx
+├── components/             # Workbench UI (radar, insights, HITL modal, PDF)
+├── hooks/                  # Session, SSE stream, health polling
+├── lib/                    # Stream parser, Plutchik utils, CSV, model router
+├── mcp/filesystem/         # Local filesystem MCP for uploads/ and demo_data/
+├── schemas/                # JSON contracts for each resonance-data fence
 ├── scripts/
 │   └── cluster.py          # k-means clustering (runs in Daytona sandbox)
+├── demo_data/Results/      # Linear, Zomato, Cursor demo CSVs, screenshots, PDFs
+├── public/demo/            # Sample CSVs and stream fixtures for the UI
 ├── agent.json              # TrueForge agent configuration (do not commit secrets)
-└── .env.example            # Environment variable template
+└── .env.example
 ```
 
 ---
@@ -222,13 +273,9 @@ resonance/
 ## Development
 
 ```bash
-# Run every local quality check
 npm run lint
 npm run typecheck
 npm test
-
-# Format (Prettier via ESLint)
-npm run lint -- --fix
 ```
 
 ---
@@ -242,6 +289,6 @@ npm run lint -- --fix
 
 ---
 
-## Licence
+## License
 
 MIT

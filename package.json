@@ -2,7 +2,11 @@
   "name": "resonance",
   "version": "0.1.0",
   "private": true,
+  "description": "Customer emotion archaeology: Plutchik scoring, cognitive dissonance, Hidden Asks, and HITL roadmap recommendations on the TrueForge harness.",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 43123",
     "mcp": "node mcp/filesystem/server.mjs",

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="8" fill="#071018"/>
+  <g transform="translate(16 16)">
+    <path d="M0-13 A13 13 0 0 1 9.19-9.19 L5.3-5.3 A7.5 7.5 0 0 0 0-7.5 Z" fill="#f5d76e"/>
+    <path d="M9.19-9.19 A13 13 0 0 1 13 0 L7.5 0 A7.5 7.5 0 0 0 5.3-5.3 Z" fill="#5ee0a0"/>
+    <path d="M13 0 A13 13 0 0 1 9.19 9.19 L5.3 5.3 A7.5 7.5 0 0 0 7.5 0 Z" fill="#7dffb3"/>
+    <path d="M9.19 9.19 A13 13 0 0 1 0 13 L0 7.5 A7.5 7.5 0 0 0 5.3 5.3 Z" fill="#67e8f9"/>
+    <path d="M0 13 A13 13 0 0 1-9.19 9.19 L-5.3 5.3 A7.5 7.5 0 0 0 0 7.5 Z" fill="#60a5fa"/>
+    <path d="M-9.19 9.19 A13 13 0 0 1-13 0 L-7.5 0 A7.5 7.5 0 0 0-5.3 5.3 Z" fill="#c084fc"/>
+    <path d="M-13 0 A13 13 0 0 1-9.19-9.19 L-5.3-5.3 A7.5 7.5 0 0 0-7.5 0 Z" fill="#fb7185"/>
+    <path d="M-9.19-9.19 A13 13 0 0 1 0-13 L0-7.5 A7.5 7.5 0 0 0-5.3-5.3 Z" fill="#fb923c"/>
+    <circle r="5.4" fill="#020617" stroke="#22d3ee" stroke-width="0.8"/>
+    <text y="3.2" text-anchor="middle" font-size="7.5" font-weight="700" font-family="ui-monospace, monospace" fill="#67e8f9">R</text>
+  </g>
+</svg>
