@@ -114,17 +114,19 @@ Edit `.env.local` and fill in:
 | `MCP_URL` | optional | Default: `http://127.0.0.1:8792/mcp` |
 | `TRUEFORGE_SANDBOX_EXEC_TIMEOUT_MS` | optional | Default: `300000` (5 min — needed for pip + sklearn install) |
 
-### 3. Start the UI
+### 3. Start the UI and filesystem service
 
 ```bash
-npm run dev
+npm run resonance
 ```
 
 Open [http://localhost:43123](http://localhost:43123).
 
-### 4. Start TrueForge and the filesystem MCP
+Use `npm run dev` when you only need the Next.js UI.
 
-Follow the TrueForge documentation to start both services with the `resonance` agent configuration from `agent.json`.
+### 4. Start TrueForge
+
+Follow the TrueForge documentation to start the harness with the `resonance` agent configuration from `agent.json`.
 
 ---
 
@@ -205,11 +207,10 @@ resonance/
 ## Development
 
 ```bash
-# Type-check without emitting
-npx tsc --noEmit
-
-# Lint (ESLint + react-hooks + typescript-eslint)
+# Run every local quality check
 npm run lint
+npm run typecheck
+npm test
 
 # Format (Prettier via ESLint)
 npm run lint -- --fix
