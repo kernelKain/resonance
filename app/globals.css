@@ -142,7 +142,6 @@
 
   html {
     @apply font-sans;
-    color-scheme: dark;
     letter-spacing: 0.01em;
   }
 
