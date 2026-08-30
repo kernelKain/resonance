@@ -45,13 +45,30 @@ export async function POST(request: Request) {
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
     const filename = `reviews_${stamp}_${safeName}`;
     const filePath = path.join(UPLOAD_DIR, filename);
-    await writeFile(filePath, text, "utf8");
+    const reviewCol = requireReviewTextColumn(parsed.headers);
+    const validRows = nonEmpty
+      .filter((row) => (row[reviewCol] || "").trim().length > 0)
+      .slice(0, 100);
+
+    const escapeCsv = (val: string) => {
+      if (/[",\n\r]/.test(val)) return `"${val.replace(/"/g, '""')}"`;
+      return val;
+    };
+
+    const cappedCsv = [
+      parsed.headers.map(escapeCsv).join(","),
+      ...validRows.map((row) =>
+        parsed.headers.map((h) => escapeCsv(row[h] || "")).join(","),
+      ),
+    ].join("\n");
+
+    await writeFile(filePath, cappedCsv, "utf8");
 
     return NextResponse.json({
       success: true,
       filePath: `${UPLOAD_DIR}/${filename}`,
       filename,
-      rowCount: nonEmpty.length,
+      rowCount: validRows.length,
       columns: parsed.headers,
     });
   } catch (error) {
