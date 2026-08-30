@@ -230,10 +230,23 @@ export function extractResonanceStream(raw: string): ResonanceStreamState {
   };
 }
 
+export function estimateAnalysisMinutes(reviewCount: number): number {
+  const n = Math.max(0, Math.floor(reviewCount));
+  return Math.max(1, Math.ceil(2 + n / 12));
+}
+
+export function analysisEtaCopy(reviewCount: number): string {
+  const minutes = estimateAnalysisMinutes(reviewCount);
+  return minutes === 1
+    ? "This may take about 1 minute."
+    : `This may take about ${minutes} minutes.`;
+}
+
 export function statusTextFromStream(
   stream: ResonanceStreamState,
   phase: ResonancePhase,
   error: string | null,
+  reviewCount = 0,
 ): string {
   if (phase === "uploading") return "Uploading your reviews…";
   if (phase === "error") return error ?? "Something broke.";
@@ -259,7 +272,9 @@ export function statusTextFromStream(
     return `Scored ${stream.scored.total_reviews} reviews. Grouping into segments…`;
   }
   if (phase === "running") {
-    return "Analyzing reviews — this may take a minute…";
+    return reviewCount > 0
+      ? analysisEtaCopy(reviewCount)
+      : "This may take about a minute.";
   }
   if (phase === "done") {
     return stream.scored

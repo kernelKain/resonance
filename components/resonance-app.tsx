@@ -76,9 +76,10 @@ export function ResonanceApp() {
   const health = useHealthPolling(15_000, devMode || !showWorkbench);
   const harnessReady = Boolean(health?.trueforge && health?.filesystemMcp && health?.agent);
 
+  const analyzedCount = uploadMeta?.filteredRowCount ?? uploadMeta?.rowCount ?? 0;
   const statusLine = useMemo(
-    () => statusTextFromStream(stream, phase, error),
-    [stream, phase, error],
+    () => statusTextFromStream(stream, phase, error, analyzedCount),
+    [stream, phase, error, analyzedCount],
   );
 
   const parsedLabel = stream.actionItems

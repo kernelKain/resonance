@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { extractResonanceStream, statusTextFromStream } from "../lib/resonance-parse";
+import { extractResonanceStream, estimateAnalysisMinutes, statusTextFromStream } from "../lib/resonance-parse";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const FIXTURE = path.join(ROOT, "public/demo/stream_fixture.txt");
@@ -77,6 +77,13 @@ const stubScored = extractResonanceStream(
   '```resonance-data\n{"type":"scored_reviews","total_reviews":2}\n```\n',
 );
 if (stubScored.scored) fail("scored_reviews without reviews[] must not enter stream state");
+
+if (estimateAnalysisMinutes(15) < 1) fail("ETA for 15 reviews must be at least 1 minute");
+if (estimateAnalysisMinutes(100) < estimateAnalysisMinutes(15)) {
+  fail("ETA for 100 reviews must be longer than for 15");
+}
+const hundred = statusTextFromStream(stubAnalysis, "running", null, 100);
+if (!hundred.includes("minutes")) fail(`100-review ETA should mention minutes, got: ${hundred}`);
 
 console.log("PASS");
 console.log(
