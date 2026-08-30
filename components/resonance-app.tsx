@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Terminal } from "lucide-react";
+import { Moon, Sun, Terminal } from "lucide-react";
 
 import { ApprovalModal } from "./approval-modal";
 import { InsightPanel } from "./insight-panel";
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 
 import { useResonanceState } from "@/hooks/use-resonance-state";
 import { useHealthPolling } from "@/hooks/use-health-polling";
+import { useTheme } from "@/components/theme-provider";
 
 import { UploadCard } from "./upload-card";
 import { TranscriptSidebar } from "./transcript-sidebar";
@@ -25,6 +26,7 @@ import { cn } from "@/lib/utils";
 
 export function ResonanceApp() {
   const [devMode, setDevMode] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -91,8 +93,20 @@ export function ResonanceApp() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.16),transparent_46%),radial-gradient(circle_at_88%_12%,rgba(251,146,60,0.14),transparent_32%)]" />
-      <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(34,211,238,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.07)_1px,transparent_1px)] [background-size:52px_52px]" />
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-0 transition-opacity duration-500",
+          theme === "light" ? "opacity-40" : "opacity-100",
+          "bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.16),transparent_46%),radial-gradient(circle_at_88%_12%,rgba(251,146,60,0.14),transparent_32%)]",
+        )}
+      />
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-0 transition-opacity duration-500",
+          theme === "light" ? "opacity-10" : "opacity-30",
+          "[background-image:linear-gradient(rgba(34,211,238,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.07)_1px,transparent_1px)] [background-size:52px_52px]",
+        )}
+      />
 
       <header className="relative z-10 border-b border-cyan-400/15 bg-background/75 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
@@ -116,6 +130,17 @@ export function ResonanceApp() {
               </>
             )}
             <Badge className="font-mono text-[11px] tracking-wide uppercase">v0.1</Badge>
+
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              className="flex items-center justify-center rounded-md border border-border/50 p-1.5 text-muted-foreground transition-all duration-150 hover:border-cyan-400/30 hover:text-cyan-300"
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
+            </button>
+
             <button
               onClick={() => setDevMode((prev) => !prev)}
               title="Toggle developer mode (Ctrl+D)"
@@ -182,7 +207,11 @@ export function ResonanceApp() {
                     Live analysis
                   </p>
                   <h2 className="heading-gradient mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-                    {productName}
+                    {(() => {
+                      const t = productName.trim();
+                      try { const u = new URL(t); return u.hostname.replace(/^www\./, ""); }
+                      catch { return t || "Analysis"; }
+                    })()}
                   </h2>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
                     {statusLine}
@@ -200,28 +229,48 @@ export function ResonanceApp() {
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <Metric label="Total Reviews" value={uploadMeta ? String(uploadMeta.rowCount) : "—"} />
                 <Metric
+                  className="metric-card"
+                  style={{ "--card-index": 0 } as React.CSSProperties}
+                  label="Total Reviews"
+                  value={uploadMeta ? String(uploadMeta.rowCount) : "—"}
+                />
+                <Metric
+                  className="metric-card"
+                  style={{ "--card-index": 1 } as React.CSSProperties}
                   label="Reviews Analyzed"
                   value={stream.scored ? String(stream.scored.total_reviews) : "—"}
                 />
                 <Metric
+                  className="metric-card"
+                  style={{ "--card-index": 2 } as React.CSSProperties}
                   label="Customer Segments"
                   value={stream.clustered ? String(stream.clustered.num_clusters) : "—"}
                 />
-                <Metric label="Current Stage" value={parsedLabel} />
+                <Metric
+                  className="metric-card"
+                  style={{ "--card-index": 3 } as React.CSSProperties}
+                  label="Current Stage"
+                  value={parsedLabel}
+                />
               </div>
 
               <div className="grid gap-3 sm:grid-cols-3">
                 <Metric
+                  className="metric-card"
+                  style={{ "--card-index": 4 } as React.CSSProperties}
                   label="Segments"
                   value={stream.analysis ? String(stream.analysis.archetypes?.length ?? 0) : "—"}
                 />
                 <Metric
+                  className="metric-card"
+                  style={{ "--card-index": 5 } as React.CSSProperties}
                   label="Unspoken Needs"
                   value={stream.analysis ? String(stream.analysis.hidden_asks?.length ?? 0) : "—"}
                 />
                 <Metric
+                  className="metric-card"
+                  style={{ "--card-index": 6 } as React.CSSProperties}
                   label="Recommendations"
                   value={stream.actionItems ? String(stream.actionItems.items.length) : "paused"}
                   accent={Boolean(stream.actionItems)}

@@ -52,7 +52,7 @@ export function UploadCard({
   const [dragOver, setDragOver] = useState(false);
 
   return (
-    <Card className="noise-texture glass-surface mx-auto max-w-xl border-cyan-400/20 bg-card/85 shadow-[0_0_90px_rgba(8,145,178,0.12)] ring-1 ring-white/[0.04] ring-inset">
+    <Card className="noise-texture glass-surface mx-auto max-w-xl border-cyan-400/20 bg-card/85 shadow-[0_0_90px_rgba(8,145,178,0.12)] ring-1 ring-white/[0.04] ring-inset transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_40px_rgba(34,211,238,0.12)]">
       <CardHeader className="gap-3 px-6 pt-6">
         <CardTitle className="text-3xl tracking-tight">
           Analyze Customer Reviews
@@ -112,12 +112,14 @@ export function UploadCard({
             Required column: <code className="font-mono text-cyan-200">review_text</code>.
             Optional: rating, date, author.
           </p>
-          <input
-            className="mt-5 block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-cyan-400 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-950"
-            type="file"
-            accept=".csv,text/csv"
-            onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-          />
+          <div className="mt-5 flex justify-center">
+            <input
+              className="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-cyan-400 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-950"
+              type="file"
+              accept=".csv,text/csv"
+              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+            />
+          </div>
           {file ? (
             <p className="mt-4 flex items-center justify-center gap-2 text-xs text-cyan-100">
               <FileSpreadsheet className="size-3.5" />

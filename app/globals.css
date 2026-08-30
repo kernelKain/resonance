@@ -65,38 +65,39 @@
 }
 
 :root {
-  --background: oklch(0.13 0.024 250);
-  --foreground: oklch(0.97 0.012 210);
-  --card: oklch(0.17 0.028 250);
-  --card-foreground: oklch(0.97 0.012 210);
-  --popover: oklch(0.16 0.03 250);
-  --popover-foreground: oklch(0.97 0.012 210);
-  --primary: oklch(0.82 0.16 205);
-  --primary-foreground: oklch(0.16 0.04 250);
-  --secondary: oklch(0.22 0.03 250);
-  --secondary-foreground: oklch(0.96 0.01 210);
-  --muted: oklch(0.22 0.028 250);
-  --muted-foreground: oklch(0.74 0.03 220);
-  --accent: oklch(0.24 0.04 205);
-  --accent-foreground: oklch(0.96 0.02 210);
-  --destructive: oklch(0.72 0.17 40);
-  --border: oklch(0.84 0.12 205 / 16%);
-  --input: oklch(0.84 0.12 205 / 18%);
-  --ring: oklch(0.84 0.16 205);
-  --chart-1: oklch(0.82 0.16 205);
-  --chart-2: oklch(0.76 0.18 50);
-  --chart-3: oklch(0.7 0.14 250);
-  --chart-4: oklch(0.78 0.14 145);
-  --chart-5: oklch(0.72 0.16 20);
+  /* ── Light theme ── off-white background, deep navy text, cyan accent ── */
+  --background: oklch(0.98 0.006 220);
+  --foreground: oklch(0.18 0.04 240);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.04 240);
+  --popover: oklch(0.99 0.004 220);
+  --popover-foreground: oklch(0.18 0.04 240);
+  --primary: oklch(0.55 0.16 205);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.93 0.01 220);
+  --secondary-foreground: oklch(0.22 0.04 240);
+  --muted: oklch(0.94 0.008 220);
+  --muted-foreground: oklch(0.45 0.04 220);
+  --accent: oklch(0.9 0.06 205);
+  --accent-foreground: oklch(0.18 0.04 240);
+  --destructive: oklch(0.58 0.22 28);
+  --border: oklch(0.82 0.06 220 / 30%);
+  --input: oklch(0.82 0.06 220 / 25%);
+  --ring: oklch(0.55 0.16 205);
+  --chart-1: oklch(0.55 0.16 205);
+  --chart-2: oklch(0.62 0.18 50);
+  --chart-3: oklch(0.52 0.14 250);
+  --chart-4: oklch(0.56 0.14 145);
+  --chart-5: oklch(0.55 0.16 20);
   --radius: 0.75rem;
-  --sidebar: oklch(0.16 0.028 250);
-  --sidebar-foreground: oklch(0.97 0.012 210);
-  --sidebar-primary: oklch(0.82 0.16 205);
-  --sidebar-primary-foreground: oklch(0.16 0.04 250);
-  --sidebar-accent: oklch(0.22 0.03 250);
-  --sidebar-accent-foreground: oklch(0.97 0.012 210);
-  --sidebar-border: oklch(0.84 0.12 205 / 14%);
-  --sidebar-ring: oklch(0.84 0.16 205);
+  --sidebar: oklch(0.96 0.008 220);
+  --sidebar-foreground: oklch(0.18 0.04 240);
+  --sidebar-primary: oklch(0.55 0.16 205);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.92 0.01 220);
+  --sidebar-accent-foreground: oklch(0.22 0.04 240);
+  --sidebar-border: oklch(0.82 0.06 220 / 25%);
+  --sidebar-ring: oklch(0.55 0.16 205);
 }
 
 .dark {
@@ -257,6 +258,79 @@
   transform-origin: center;
 }
 
+/* ── Premium animation keyframes ────────────────────────────────────────────── */
+
+/* Slow animated background gradient mesh */
+@keyframes aurora {
+  0%, 100% {
+    background-position: 0% 50%;
+    opacity: 0.18;
+  }
+  33% {
+    background-position: 100% 0%;
+    opacity: 0.22;
+  }
+  66% {
+    background-position: 50% 100%;
+    opacity: 0.16;
+  }
+}
+
+/* Subtle card float for hover lift */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-3px); }
+}
+
+/* Staggered entrance for metric cards */
+@keyframes slide-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Smooth theme transition on all color-using properties */
+*,
+*::before,
+*::after {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
+}
+
+/* Exclude elements where instant change is needed */
+[data-slot="button"],
+input,
+textarea,
+select,
+svg,
+path,
+circle,
+rect,
+line,
+polyline,
+polygon {
+  transition-property: none;
+}
+
+/* Metric card stagger via CSS custom property */
+.metric-card {
+  animation: slide-in-up 0.35s ease both;
+  animation-delay: calc(var(--card-index, 0) * 60ms);
+}
+
+/* Light-mode heading gradient — deeper cyan for contrast on white */
+:root .heading-gradient {
+  background: linear-gradient(135deg, oklch(0.42 0.14 205), oklch(0.36 0.16 215), oklch(0.42 0.14 205));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Light-mode scrollbar */
+:root {
+  scrollbar-color: oklch(0.75 0.06 220) oklch(0.94 0.008 220);
+}
+
 /* ── Print / PDF export ──────────────────────────────────────────────────────── */
 @media print {
   /* Hide UI chrome that should not appear in the PDF */
@@ -268,22 +342,61 @@
     display: none !important;
   }
 
-  /* Force white background and black text for readability */
+  /* Dark-mode PDF: keep the slate palette instead of forcing white */
   body,
   .bg-background,
   .glass-surface,
   [class*="bg-card"],
   [class*="bg-slate"] {
-    background: white !important;
-    color: black !important;
+    background: #0f172a !important;
+    color: #e2e8f0 !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
 
-  /* Reset gradient text so it prints as solid colour */
+  /* Soften card borders for dark print */
+  [data-slot="card"],
+  article {
+    border-color: rgba(148, 163, 184, 0.2) !important;
+  }
+
+  /* Keep gradient heading text readable on dark background */
   .heading-gradient {
-    -webkit-text-fill-color: oklch(0.2 0.08 205);
+    -webkit-text-fill-color: #67e8f9;
     background: none;
+  }
+
+  /* ── Force ALL tab panels visible so every section prints ── */
+  /* Tabs hide inactive panels with display:none — override for print */
+  [role="tabpanel"] {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  /* Remove scroll-area height constraint so all cards print */
+  [data-radix-scroll-area-viewport],
+  .h-\[28rem\] {
+    height: auto !important;
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /* Print section order headings as separators */
+  [data-tab-section]::before {
+    content: attr(data-tab-section);
+    display: block;
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #67e8f9;
+    padding: 1rem 0 0.5rem;
+    border-top: 1px solid rgba(103, 232, 249, 0.2);
+    margin-top: 1.5rem;
   }
 
   /* Let cards and grids reflow to full width for print */
@@ -293,7 +406,6 @@
     page-break-inside: avoid;
     break-inside: avoid;
     margin-bottom: 1rem;
-    border: 1px solid #e2e8f0 !important;
     border-radius: 0.5rem;
     padding: 1rem;
   }
