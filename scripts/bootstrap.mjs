@@ -23,9 +23,14 @@ loadEnvFiles();
 
 const TRUEFORGE = process.env.TRUEFORGE_BASE_URL ?? "http://127.0.0.1:8790";
 const AGENT_NAME = process.env.TRUEFORGE_AGENT_NAME ?? "resonance";
+const FALLBACK_AGENT_NAME =
+  process.env.TRUEFORGE_FALLBACK_AGENT_NAME ?? "resonance-deepseek";
 const MCP_URL = process.env.MCP_URL ?? "http://127.0.0.1:8792/mcp";
 const MODEL_FQN =
   process.env.TRUEFORGE_MODEL ?? "openrouter/minimax-minimax-m-3-free";
+const FALLBACK_MODEL_FQN =
+  process.env.TRUEFORGE_FALLBACK_MODEL ??
+  "openrouter/deepseek-deepseek-v4-flash-0731";
 
 async function tf(pathname, init = {}) {
   const response = await fetch(`${TRUEFORGE}${pathname}`, {
@@ -60,6 +65,11 @@ function openRouterModels() {
       model_id: "minimax/minimax-m3:free",
       name: "minimax-minimax-m-3-free",
       properties: { context_length: 1048576, max_output_tokens: 65536 },
+    },
+    {
+      model_id: "deepseek/deepseek-v4-flash-0731",
+      name: "deepseek-deepseek-v4-flash-0731",
+      properties: { context_length: 1000000, max_output_tokens: 32768 },
     },
   ];
 }
@@ -150,34 +160,34 @@ async function upsertMcp(manifest) {
   console.log(`• MCP connector '${manifest.name}' → ${manifest.url}`);
 }
 
-async function upsertAgent() {
+async function upsertAgent(agentName, modelName) {
   const specPath = path.join(ROOT, "agent.json");
   if (!fs.existsSync(specPath)) {
     throw new Error("Missing agent.json in repo root. Create it before bootstrap.");
   }
   const spec = JSON.parse(fs.readFileSync(specPath, "utf8"));
   spec.model = spec.model ?? {};
-  spec.model.name = MODEL_FQN;
+  spec.model.name = modelName;
 
   const listed = await tf("/api/v1/agents");
   const existing = (
     Array.isArray(listed.data) ? listed.data : listed.data?.items ?? listed.items ?? []
-  ).find((agent) => agent.name === AGENT_NAME);
+  ).find((agent) => agent.name === agentName);
 
   if (existing) {
     await tf(`/api/v1/agents/${existing.id}`, {
       method: "PUT",
       body: JSON.stringify({ manifest: spec }),
     });
-    console.log(`• Agent '${AGENT_NAME}' updated (${existing.id}).`);
+    console.log(`• Agent '${agentName}' updated (${existing.id}) with ${modelName}.`);
     return existing;
   }
 
   const created = await tf("/api/v1/agents", {
     method: "POST",
-    body: JSON.stringify({ name: AGENT_NAME, manifest: spec }),
+    body: JSON.stringify({ name: agentName, manifest: spec }),
   });
-  console.log(`• Agent '${AGENT_NAME}' created (${created.data?.id ?? "ok"}).`);
+  console.log(`• Agent '${agentName}' created (${created.data?.id ?? "ok"}) with ${modelName}.`);
   return created.data;
 }
 
@@ -215,11 +225,14 @@ async function main() {
     url: "https://mcp.exa.ai/mcp",
     description: "Search the web, fetch page contents, and find similar pages.",
   });
-  await upsertAgent();
+  await upsertAgent(AGENT_NAME, MODEL_FQN);
+  await upsertAgent(FALLBACK_AGENT_NAME, FALLBACK_MODEL_FQN);
 
   console.log(`\nDone. Open TrueForge at ${TRUEFORGE}`);
   console.log(`Saved agent name: ${AGENT_NAME}`);
-  console.log(`Model: ${MODEL_FQN}`);
+  console.log(`Primary model: ${MODEL_FQN}`);
+  console.log(`Fallback agent: ${FALLBACK_AGENT_NAME}`);
+  console.log(`Fallback model: ${FALLBACK_MODEL_FQN}`);
 }
 
 main().catch((error) => {

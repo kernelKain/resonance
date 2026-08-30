@@ -111,6 +111,9 @@ Edit `.env.local` and fill in:
 | `TRUEFORGE_BASE_URL` | optional | Default: `http://127.0.0.1:8790` |
 | `TRUEFORGE_AGENT_NAME` | optional | Default: `resonance` |
 | `TRUEFORGE_MODEL` | optional | Default: `openrouter/minimax-minimax-m-3-free` |
+| `TRUEFORGE_FALLBACK_AGENT_NAME` | optional | Default: `resonance-deepseek` |
+| `TRUEFORGE_FALLBACK_MODEL` | optional | Default: `openrouter/deepseek-deepseek-v4-flash-0731` |
+| `MODEL_COOLDOWN_MS` | optional | MiniMax recovery-probe cooldown; default: `300000` |
 | `MCP_URL` | optional | Default: `http://127.0.0.1:8792/mcp` |
 | `TRUEFORGE_SANDBOX_EXEC_TIMEOUT_MS` | optional | Default: `300000` (5 min — needed for pip + sklearn install) |
 
@@ -147,6 +150,16 @@ Follow the TrueForge documentation to start the harness with the `resonance` age
 | `Ctrl + D` | Toggle Developer mode — shows raw agent output and health status dots |
 
 The **Dev** button in the header provides the same toggle for mouse users.
+
+### Model continuity
+
+MiniMax M3 is the primary model. If a new analysis receives a quota, rate-limit,
+capacity, or retryable provider error before streaming starts, Resonance
+transparently replays that first turn on DeepSeek V4 Flash 0731. The DeepSeek
+fallback has a one-million-token context window and supports structured output
+and tool calling. A run remains pinned to one model through its approval
+checkpoint. After the configured cooldown, a new run probes MiniMax and closes
+the circuit after a successful turn.
 
 ---
 

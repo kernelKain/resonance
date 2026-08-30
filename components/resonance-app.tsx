@@ -56,6 +56,7 @@ export function ResonanceApp() {
     uploadMeta,
     pendingQuestion,
     decisionBusy,
+    modelProvider,
     loadSample,
     loadScoringFixture,
     replayFixture,
@@ -224,6 +225,11 @@ export function ResonanceApp() {
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground" aria-live="polite">
                     {statusLine}
                   </p>
+                  {modelProvider ? (
+                    <Badge variant="outline" className="mt-2 font-mono text-[10px] uppercase">
+                      {modelProvider === "minimax" ? "MiniMax M3" : "DeepSeek V4 Flash"}
+                    </Badge>
+                  ) : null}
                   </div>
                 </div>
                 <Button

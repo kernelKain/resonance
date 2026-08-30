@@ -34,7 +34,7 @@ function agentsFrom(payload: AgentListResponse): Array<{ id: string; name: strin
   return [];
 }
 
-export async function findResonanceAgent(): Promise<{
+export async function findAgentByName(name: string): Promise<{
   id: string;
   name: string;
 } | null> {
@@ -45,9 +45,25 @@ export async function findResonanceAgent(): Promise<{
 
   const payload = (await response.json()) as AgentListResponse;
   const agents = agentsFrom(payload);
-  return (
-    agents.find((agent) => agent.name === TRUEFORGE_AGENT_NAME) ??
-    agents[0] ??
-    null
-  );
+  return agents.find((agent) => agent.name === name) ?? null;
+}
+
+export function findResonanceAgent() {
+  return findAgentByName(TRUEFORGE_AGENT_NAME);
+}
+
+export async function createTrueforgeSession(agentName: string): Promise<string> {
+  const agent = await findAgentByName(agentName);
+  if (!agent) throw new Error(`No TrueForge agent named '${agentName}'. Run npm run bootstrap.`);
+  const response = await trueforgeFetch("/api/v1/sessions", {
+    method: "POST",
+    body: JSON.stringify({ agent: { name: agent.name } }),
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`TrueForge refused the ${agentName} session: ${text}`);
+  }
+  const payload = JSON.parse(text) as { data?: { id?: string } };
+  if (!payload.data?.id) throw new Error("TrueForge created a session without an id.");
+  return payload.data.id;
 }

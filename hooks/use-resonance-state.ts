@@ -126,6 +126,20 @@ function deltaText(event: Record<string, unknown>): string {
   return "";
 }
 
+function turnFailure(event: Record<string, unknown>): string | null {
+  const type = String(event.type ?? "");
+  if (["model.error", "turn.error", "turn.failed"].includes(type)) {
+    return String(event.message ?? event.error ?? "The model stream failed.");
+  }
+  if (type === "turn.done") {
+    const state = event.state as { status?: string; error?: unknown } | undefined;
+    if (state?.status === "failed" || state?.status === "error") {
+      return String(state.error ?? "The model could not complete the turn.");
+    }
+  }
+  return null;
+}
+
 /** Promise-based sleep utility used when retrying failed API calls. */
 function sleep(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -152,6 +166,8 @@ export function useResonanceState() {
     filteredRowCount?: number;
   } | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [activeAgentName, setActiveAgentName] = useState<string | null>(null);
+  const [modelProvider, setModelProvider] = useState<"minimax" | "deepseek" | null>(null);
   const [pendingQuestion, setPendingQuestion] = useState<PendingUserQuestion | null>(null);
   const [replayTail, setReplayTail] = useState<string>("");
   const [decisionBusy, setDecisionBusy] = useState(false);
@@ -245,6 +261,8 @@ export function useResonanceState() {
     setPendingQuestion(null);
     setReplayTail("");
     setSessionId(null);
+    setActiveAgentName(null);
+    setModelProvider(null);
     setDecisionBusy(false);
     // Clear saved session on a fresh run
     try { sessionStorage.removeItem("resonance_session"); } catch { /* ignore */ }
@@ -397,24 +415,40 @@ export function useResonanceState() {
     }
   }
 
-  async function openSession(): Promise<string> {
-    const sessionRes = await fetch("/api/session", { method: "POST" });
+  async function openSession(
+    forceFallback = false,
+    failure?: string,
+  ): Promise<{ sessionId: string; agentName: string }> {
+    const sessionRes = await fetch("/api/session", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ forceFallback, failure }),
+    });
     const sessionJson = (await sessionRes.json()) as {
       sessionId?: string;
+      agentName?: string;
+      modelProvider?: "minimax" | "deepseek";
       error?: string;
     };
-    if (!sessionRes.ok || !sessionJson.sessionId) {
+    if (!sessionRes.ok || !sessionJson.sessionId || !sessionJson.agentName) {
       throw new Error(sessionJson.error ?? "Could not open a TrueForge session.");
     }
     setSessionId(sessionJson.sessionId);
-    return sessionJson.sessionId;
+    setActiveAgentName(sessionJson.agentName);
+    setModelProvider(sessionJson.modelProvider ?? "minimax");
+    return { sessionId: sessionJson.sessionId, agentName: sessionJson.agentName };
   }
 
-  async function streamTurn(nextSessionId: string, body: Record<string, unknown>) {
+  async function streamTurn(
+    nextSessionId: string,
+    body: Record<string, unknown>,
+    turnAgentName = activeAgentName,
+    allowFallback = true,
+  ) {
     const turnRes = await fetch("/api/turn", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ sessionId: nextSessionId, ...body }),
+      body: JSON.stringify({ sessionId: nextSessionId, agentName: turnAgentName, ...body }),
     });
 
     if (!turnRes.ok) {
@@ -422,13 +456,36 @@ export function useResonanceState() {
       throw new Error(failed.error ?? "TrueForge turn failed.");
     }
 
+    const routedSessionId = turnRes.headers.get("x-resonance-session-id");
+    const routedAgentName = turnRes.headers.get("x-resonance-agent-name");
+    const routedProvider = turnRes.headers.get("x-resonance-model-provider");
+    if (routedSessionId) setSessionId(routedSessionId);
+    if (routedAgentName) setActiveAgentName(routedAgentName);
+    if (routedProvider === "minimax" || routedProvider === "deepseek") {
+      setModelProvider(routedProvider);
+      if (routedProvider === "deepseek") {
+        setTranscript((current) => [
+          ...current,
+          {
+            id: crypto.randomUUID(),
+            kind: "status",
+            text: "MiniMax is temporarily unavailable. Analysis continued with DeepSeek V4 Flash.",
+          },
+        ]);
+      }
+    }
+
     const messages = new Map<string, Record<string, unknown>>();
     let ingest: TurnIngest = { pending: pendingQuestion, paused: false };
+    let streamFailure: string | null = null;
+    let producedAssistantText = false;
 
     await readSse(turnRes, (event) => {
       ingest = applyTurnEvent(event, messages, ingest);
+      streamFailure ??= turnFailure(event);
       const piece = deltaText(event);
       if (piece) {
+        producedAssistantText = true;
         ingestAssistantChunk(piece);
         return;
       }
@@ -437,6 +494,24 @@ export function useResonanceState() {
         setTranscript((current) => [...current, item]);
       }
     });
+
+    if (streamFailure && allowFallback && body.message && !producedAssistantText) {
+      const fallback = await openSession(true, streamFailure);
+      setTranscript((current) => [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          kind: "status",
+          text: "MiniMax could not start the analysis. Retrying with DeepSeek V4 Flash.",
+        },
+      ]);
+      await streamTurn(fallback.sessionId, body, fallback.agentName, false);
+      return;
+    }
+
+    if (streamFailure) {
+      throw new Error(streamFailure);
+    }
 
     flushAssistant();
     extractResonanceStream(assistantRef.current);
@@ -490,7 +565,7 @@ export function useResonanceState() {
         filteredRowCount: uploadJson.filteredRowCount,
       });
 
-      const nextSessionId = await openSession();
+      const nextSession = await openSession();
       const basename =
         uploadJson.filename ?? uploadJson.filePath.split("/").pop() ?? file.name;
       const identity = await resolveProductIdentity(productName);
@@ -510,7 +585,7 @@ export function useResonanceState() {
         },
       ]);
       setPhase("running");
-      await streamTurn(nextSessionId, { message });
+      await streamTurn(nextSession.sessionId, { message }, nextSession.agentName);
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "Run failed.";
       setError(message);
@@ -527,7 +602,7 @@ export function useResonanceState() {
     setProductName(cleanName);
 
     try {
-      const nextSessionId = await openSession();
+      const nextSession = await openSession();
       const message = `HITL_SMOKE for ${cleanName}. Pause for approval. Do not read a CSV.`;
       setTranscript([
         {
@@ -537,7 +612,7 @@ export function useResonanceState() {
         },
       ]);
       setPhase("running");
-      await streamTurn(nextSessionId, { message });
+      await streamTurn(nextSession.sessionId, { message }, nextSession.agentName);
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "HITL smoke failed.";
       setError(message);
@@ -611,6 +686,7 @@ export function useResonanceState() {
     uploadMeta,
     pendingQuestion,
     decisionBusy,
+    modelProvider,
     replayCancelRef,
     loadSample,
     loadScoringFixture,
