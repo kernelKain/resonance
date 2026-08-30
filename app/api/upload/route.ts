@@ -6,6 +6,7 @@ import { UPLOAD_DIR } from "@/lib/config";
 import { parseCsv, requireReviewTextColumn } from "@/lib/csv";
 
 export const runtime = "nodejs";
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
 /** Serialises a parsed CSV table back to a CSV string (RFC-4180). */
 function serialiseCsv(headers: string[], rows: Record<string, string>[]): string {
@@ -38,6 +39,13 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { success: false, error: "Only .csv files are accepted." },
         { status: 400 },
+      );
+    }
+
+    if (file.size > MAX_UPLOAD_BYTES) {
+      return NextResponse.json(
+        { success: false, error: "CSV files must be 5 MB or smaller." },
+        { status: 413 },
       );
     }
 

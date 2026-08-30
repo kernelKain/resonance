@@ -55,7 +55,6 @@ export function ResonanceApp() {
     uploadMeta,
     pendingQuestion,
     decisionBusy,
-    replayCancelRef,
     loadSample,
     loadScoringFixture,
     replayFixture,
@@ -63,6 +62,7 @@ export function ResonanceApp() {
     runExcavation,
     runHitlSmoke,
     decide,
+    resetRun,
   } = state;
 
   const canRun = Boolean(productName.trim() && file);
@@ -204,7 +204,7 @@ export function ResonanceApp() {
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <div className="min-w-0">
                   <p className="font-mono text-[11px] tracking-[0.24em] text-cyan-300 uppercase">
-                    Live analysis
+                    Live Analysis
                   </p>
                   <h2 className="heading-gradient mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
                     {(() => {
@@ -213,16 +213,13 @@ export function ResonanceApp() {
                       catch { return t || "Analysis"; }
                     })()}
                   </h2>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground" aria-live="polite">
                     {statusLine}
                   </p>
                 </div>
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    replayCancelRef.current = true;
-                    window.location.reload();
-                  }}
+                  onClick={resetRun}
                 >
                   New run
                 </Button>
@@ -282,18 +279,17 @@ export function ResonanceApp() {
                 <InsightPanel stream={stream} />
               </div>
 
-              {phase === "done" && !devMode ? (
+              <AgentOutput
+                stream={stream}
+                phase={phase}
+                assistant={assistant}
+                error={error}
+                devMode={devMode}
+                transcript={transcript}
+              />
+              {phase === "done" ? (
                 <ResultsSummary stream={stream} productName={productName} />
-              ) : (
-                <AgentOutput
-                  stream={stream}
-                  phase={phase}
-                  assistant={assistant}
-                  error={error}
-                  devMode={devMode}
-                  transcript={transcript}
-                />
-              )}
+              ) : null}
             </div>
             </motion.div>
           )}

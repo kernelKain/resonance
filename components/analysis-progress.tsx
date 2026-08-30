@@ -72,16 +72,29 @@ export function AnalysisProgress({
   const liveCount = stream.scored?.total_reviews ?? null;
 
   return (
-    <div className="space-y-5">
+    <div
+      className="space-y-5"
+      role="progressbar"
+      aria-label="Analysis progress"
+      aria-valuemin={1}
+      aria-valuemax={STAGES.length}
+      aria-valuenow={activeIndex + 1}
+      aria-valuetext={activeStage?.label}
+    >
       {/* Step track */}
-      <div className="flex items-start gap-1">
+      <div className="-mx-1 overflow-x-auto px-1 pb-2">
+      <ol className="flex min-w-[36rem] items-start gap-1 sm:min-w-0">
         {STAGES.map((stage, i) => {
           const isComplete = i < activeIndex;
           const isActive = i === activeIndex;
           const isPending = i > activeIndex;
 
           return (
-            <div key={stage.key} className="flex flex-1 items-start gap-1">
+            <li
+              key={stage.key}
+              className="flex flex-1 items-start gap-1"
+              aria-current={isActive ? "step" : undefined}
+            >
               <div className="flex flex-1 flex-col items-center gap-2">
                 {/* Step node */}
                 <motion.div
@@ -90,7 +103,7 @@ export function AnalysisProgress({
                     isComplete && "border-cyan-400 bg-cyan-400/20 text-cyan-300",
                     isActive &&
                       "border-cyan-400 bg-cyan-400/30 text-cyan-100 shadow-[0_0_20px_rgba(34,211,238,0.5)]",
-                    isPending && "border-zinc-600 bg-zinc-800/50 text-zinc-500",
+                    isPending && "border-border bg-muted/50 text-muted-foreground",
                   )}
                   initial={false}
                   animate={isActive ? { scale: [1, 1.08, 1] } : { scale: 1 }}
@@ -107,7 +120,7 @@ export function AnalysisProgress({
                     "text-center text-[10px] font-medium tracking-wider uppercase",
                     isComplete && "text-cyan-300",
                     isActive && "text-cyan-100",
-                    isPending && "text-zinc-500",
+                    isPending && "text-muted-foreground",
                   )}
                 >
                   {stage.label}
@@ -119,13 +132,14 @@ export function AnalysisProgress({
                 <div
                   className={cn(
                     "mt-4 h-0.5 flex-1 rounded-full transition-colors duration-500",
-                    i < activeIndex ? "bg-cyan-400/60" : "bg-zinc-700/50",
+                    i < activeIndex ? "bg-cyan-400/60" : "bg-border",
                   )}
                 />
               )}
-            </div>
+            </li>
           );
         })}
+      </ol>
       </div>
 
       {/* Contextual hint for the active step */}
@@ -137,8 +151,8 @@ export function AnalysisProgress({
           transition={{ duration: 0.25 }}
           className="flex items-start gap-3 rounded-lg border border-cyan-400/15 bg-cyan-400/5 px-4 py-3"
         >
-          <span className="mt-0.5 h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-cyan-400" />
-          <p className="text-sm leading-6 text-cyan-100/80">{activeStage.hint}</p>
+          <span className="mt-0.5 h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-cyan-400 motion-reduce:animate-none" />
+          <p className="text-sm leading-6 text-foreground/80">{activeStage.hint}</p>
           {liveCount !== null && activeIndex >= 2 && (
             <span className="ml-auto shrink-0 rounded-md border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 font-mono text-[11px] tabular-nums text-cyan-300">
               {liveCount} reviews

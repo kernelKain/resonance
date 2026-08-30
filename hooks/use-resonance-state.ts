@@ -240,6 +240,16 @@ export function useResonanceState() {
     try { sessionStorage.removeItem("resonance_session"); } catch { /* ignore */ }
   }
 
+  function resetRun() {
+    replayCancelRef.current = true;
+    resetStream();
+    setFile(null);
+    setProductName("");
+    setUploadMeta(null);
+    setError(null);
+    setPhase("idle");
+  }
+
   function ingestAssistantChunk(piece: string) {
     if (!piece) return;
     assistantRef.current += piece;
@@ -573,5 +583,6 @@ export function useResonanceState() {
     runExcavation,
     runHitlSmoke,
     decide,
+    resetRun,
   };
 }

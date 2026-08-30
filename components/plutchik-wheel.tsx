@@ -131,14 +131,14 @@ function RadarTooltipContent({
   const pt = item.payload;
   const description = EMOTION_DESCRIPTIONS[pt.key];
   return (
-    <div className="rounded-lg border border-cyan-400/20 bg-slate-900/96 px-3 py-2.5 text-xs shadow-2xl backdrop-blur-md">
+    <div className="rounded-lg border border-border bg-popover px-3 py-2.5 text-xs text-popover-foreground shadow-2xl backdrop-blur-md">
       <p
         className="font-mono font-semibold tracking-[0.14em] uppercase"
         style={{ color: pt.color }}
       >
         {pt.axis}
       </p>
-      <p className="mt-1 font-mono tabular-nums text-cyan-100">
+      <p className="mt-1 font-mono tabular-nums text-foreground">
         {pt.value.toFixed(2)}{" "}
         <span className="text-muted-foreground">/ 1.00</span>
       </p>
@@ -149,7 +149,7 @@ function RadarTooltipContent({
         />
       </div>
       {description && (
-        <p className="mt-2 leading-5 text-slate-400">{description}</p>
+        <p className="mt-2 leading-5 text-muted-foreground">{description}</p>
       )}
     </div>
   );
@@ -190,7 +190,20 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
       <CardHeader className="gap-2">
         <div className="flex items-center gap-2">
           <CardTitle className="text-lg tracking-tight">Emotion Profile</CardTitle>
-          <InfoTooltip content="Plutchik's Wheel of Emotions maps 8 core emotions. This profile shows the aggregate emotional footprint of your customers' reviews." />
+          <InfoTooltip
+            label="How the Emotion Profile works"
+            content={
+              <div>
+                <p className="font-semibold">How the Emotion Profile works</p>
+                <ul className="mt-2 list-disc space-y-1.5 pl-4 text-muted-foreground">
+                  <li>Every review is scored independently across Plutchik&apos;s eight core emotions.</li>
+                  <li>The chart averages those scores on a scale from 0 (absent) to 1 (overwhelming).</li>
+                  <li>Multiple emotions can be strong at once; the profile is not positive-versus-negative sentiment.</li>
+                  <li>Hover or tap an emotion to see its meaning and compare its relative strength.</li>
+                </ul>
+              </div>
+            }
+          />
         </div>
         <CardDescription className="leading-6">
           {scores
@@ -368,7 +381,7 @@ export function PlutchikWheel({ stream }: { stream: ResonanceStreamState }) {
                   </p>
 
                   {/* Score value */}
-                  <p className="mt-1 font-mono text-sm tabular-nums text-cyan-100">
+                  <p className="mt-1 font-mono text-sm tabular-nums text-foreground">
                     {scores ? value.toFixed(2) : "—"}
                   </p>
 
