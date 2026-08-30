@@ -17,7 +17,7 @@ export function TranscriptSidebar({ transcript, assistant }: TranscriptSidebarPr
   }, [transcript, assistant]);
 
   return (
-    <aside className="min-h-[28rem]">
+    <aside className="min-h-72">
       <Card className="noise-texture glass-surface flex h-full flex-col border-cyan-400/15 bg-card/85 ring-1 ring-white/[0.04] ring-inset">
         <CardHeader className="border-b border-cyan-400/10">
           <CardTitle className="text-lg tracking-tight">Activity Log</CardTitle>
@@ -26,7 +26,7 @@ export function TranscriptSidebar({ transcript, assistant }: TranscriptSidebarPr
           </CardDescription>
         </CardHeader>
         <CardContent className="min-h-0 flex-1 p-0">
-          <ScrollArea className="h-[32rem] px-4 py-4">
+          <ScrollArea className="h-[min(32rem,65vh)] min-h-72 px-4 py-4">
             <div className="space-y-3">
               {transcript.length === 0 && !assistant ? (
                 <p className="text-sm leading-6 text-muted-foreground">

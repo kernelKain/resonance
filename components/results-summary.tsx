@@ -1,27 +1,59 @@
 "use client";
 
-import { CheckCircle2, Download } from "lucide-react";
+import { useState } from "react";
+import { CheckCircle2, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ResonanceStreamState } from "@/lib/resonance-parse";
 import { resolveAverageScores, dominantEmotion, EMOTION_LABELS } from "@/lib/plutchik";
+import type { ProductIdentity } from "@/lib/product-identity";
 
 type Props = {
   stream: ResonanceStreamState;
   productName?: string;
+  productIdentity?: ProductIdentity | null;
+  modelProvider?: "minimax" | "deepseek" | null;
 };
 
-export function ResultsSummary({ stream, productName = "Product" }: Props) {
+export function ResultsSummary({
+  stream,
+  productName = "Product",
+  productIdentity,
+  modelProvider,
+}: Props) {
   const scores = resolveAverageScores(stream);
   const dominant = scores ? dominantEmotion(scores) : null;
   const findings = stream.actionItems?.items.slice(0, 3) ?? [];
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
-  function handleExportPdf() {
-    const prev = document.title;
-    document.title = `Resonance — ${productName} Analysis`;
-    window.print();
-    // Restore original title after a brief delay (print dialog can be async)
-    setTimeout(() => { document.title = prev; }, 2000);
+  async function handleExportPdf() {
+    setExporting(true);
+    setExportError(null);
+    try {
+      const [{ pdf }, { ResonanceDocument }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("@/components/pdf/resonance-document"),
+      ]);
+      const product = productIdentity ?? { name: productName };
+      const blob = await pdf(
+        <ResonanceDocument
+          stream={stream}
+          product={product}
+          modelProvider={modelProvider}
+        />,
+      ).toBlob();
+      const href = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = href;
+      anchor.download = `${product.name.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "product"}-resonance-report.pdf`;
+      anchor.click();
+      window.setTimeout(() => URL.revokeObjectURL(href), 1_000);
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : "Could not generate the PDF.");
+    } finally {
+      setExporting(false);
+    }
   }
 
   return (
@@ -111,12 +143,16 @@ export function ResultsSummary({ stream, productName = "Product" }: Props) {
           <Button
             variant="outline"
             className="gap-2"
-            onClick={handleExportPdf}
-            title="Export as PDF using the browser print dialog"
+            onClick={() => void handleExportPdf()}
+            disabled={exporting}
+            title="Download a complete dark-theme PDF report"
           >
-            <Download className="size-4" />
-            Export PDF
+            {exporting ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+            {exporting ? "Generating PDF…" : "Export PDF"}
           </Button>
+          {exportError ? (
+            <p role="alert" className="mt-2 text-sm text-destructive">{exportError}</p>
+          ) : null}
         </div>
       </CardContent>
     </Card>

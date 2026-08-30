@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { ResonancePhase } from "@/lib/resonance-parse";
 
+const MAX_CSV_BYTES = 5 * 1024 * 1024;
+
 type UploadCardProps = {
   productName: string;
   setProductName: (name: string) => void;
@@ -50,6 +52,28 @@ export function UploadCard({
   onRunHitlSmoke,
 }: UploadCardProps) {
   const [dragOver, setDragOver] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
+
+  function selectFile(candidate: File | null) {
+    if (!candidate) {
+      setFile(null);
+      setFileError(null);
+      return;
+    }
+    const csvType = !candidate.type || candidate.type === "text/csv" || candidate.type === "application/vnd.ms-excel";
+    if (!candidate.name.toLowerCase().endsWith(".csv") || !csvType) {
+      setFile(null);
+      setFileError("Choose a CSV file.");
+      return;
+    }
+    if (candidate.size > MAX_CSV_BYTES) {
+      setFile(null);
+      setFileError("CSV files must be 5 MB or smaller.");
+      return;
+    }
+    setFileError(null);
+    setFile(candidate);
+  }
 
   return (
     <Card className="noise-texture glass-surface mx-auto max-w-xl border-cyan-400/20 bg-card/85 shadow-[0_0_90px_rgba(8,145,178,0.12)] ring-1 ring-white/[0.04] ring-inset transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_40px_rgba(34,211,238,0.12)]">
@@ -79,7 +103,8 @@ export function UploadCard({
           </p>
         </div>
 
-        <motion.div
+        <motion.label
+          htmlFor="review-csv"
           onDragOver={(event) => {
             event.preventDefault();
             setDragOver(true);
@@ -89,12 +114,12 @@ export function UploadCard({
             event.preventDefault();
             setDragOver(false);
             const dropped = event.dataTransfer.files[0];
-            if (dropped) setFile(dropped);
+            selectFile(dropped ?? null);
           }}
           animate={dragOver ? { scale: 1.02 } : { scale: 1 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
           className={cn(
-            "rounded-xl border-2 border-dashed px-4 py-12 text-center transition-all duration-300",
+            "block cursor-pointer rounded-xl border-2 border-dashed px-4 py-10 text-center transition-all duration-300 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background sm:py-12",
             dragOver
               ? "border-cyan-300 bg-cyan-400/10 shadow-[inset_0_0_40px_rgba(34,211,238,0.12),0_0_30px_rgba(34,211,238,0.1)]"
               : file
@@ -109,24 +134,33 @@ export function UploadCard({
           )}
           <p className="text-sm font-medium">{file ? "File selected" : "Drop a CSV or click to select"}</p>
           <p className="mt-2 text-xs leading-5 text-muted-foreground">
-            Required column: <code className="font-mono text-cyan-200">review_text</code>.
+            Required column: <code className="font-mono text-primary">review_text</code>.
             Optional: rating, date, author.
           </p>
-          <div className="mt-5 flex justify-center">
-            <input
-              className="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-cyan-400 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-950"
-              type="file"
-              accept=".csv,text/csv"
-              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-            />
-          </div>
+          <input
+            id="review-csv"
+            className="sr-only"
+            type="file"
+            accept=".csv,text/csv"
+            aria-describedby="csv-requirements"
+            onChange={(event) => selectFile(event.target.files?.[0] ?? null)}
+          />
+          <span className="mx-auto mt-5 inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm">
+            {file ? "Choose a different CSV" : "Choose CSV file"}
+          </span>
           {file ? (
-            <p className="mt-4 flex items-center justify-center gap-2 text-xs text-cyan-100">
+            <p className="mt-4 flex items-center justify-center gap-2 break-all text-xs text-foreground">
               <FileSpreadsheet className="size-3.5" />
               {file.name}
             </p>
           ) : null}
-        </motion.div>
+          <p id="csv-requirements" className="mt-3 text-xs text-muted-foreground">
+            Maximum 5 MB. Up to 100 concise reviews are analyzed per run.
+          </p>
+          {fileError ? (
+            <p role="alert" className="mt-3 text-sm text-destructive">{fileError}</p>
+          ) : null}
+        </motion.label>
 
         <div className="flex flex-col gap-2 sm:flex-row">
           <Button

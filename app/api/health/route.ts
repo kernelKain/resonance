@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 
-import { MCP_BASE_URL, TRUEFORGE_AGENT_NAME, TRUEFORGE_BASE_URL } from "@/lib/config";
-import { findResonanceAgent } from "@/lib/trueforge";
+import {
+  MCP_BASE_URL,
+  TRUEFORGE_AGENT_NAME,
+  TRUEFORGE_BASE_URL,
+  TRUEFORGE_FALLBACK_AGENT_NAME,
+} from "@/lib/config";
+import { modelRoutingStatus } from "@/lib/model-router";
+import { findAgentByName, findResonanceAgent } from "@/lib/trueforge";
 
 export const runtime = "nodejs";
 
@@ -21,10 +27,15 @@ export async function GET() {
   ]);
 
   let agent = false;
+  let fallbackAgent = false;
   if (trueforge) {
     try {
-      const found = await findResonanceAgent();
+      const [found, fallback] = await Promise.all([
+        findResonanceAgent(),
+        findAgentByName(TRUEFORGE_FALLBACK_AGENT_NAME),
+      ]);
       agent = found?.name === TRUEFORGE_AGENT_NAME;
+      fallbackAgent = fallback?.name === TRUEFORGE_FALLBACK_AGENT_NAME;
     } catch {
       agent = false;
     }
@@ -34,6 +45,8 @@ export async function GET() {
     trueforge,
     filesystemMcp,
     agent,
+    fallbackAgent,
     agentName: TRUEFORGE_AGENT_NAME,
+    modelRouting: modelRoutingStatus(),
   });
 }

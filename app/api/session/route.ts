@@ -1,48 +1,43 @@
 import { NextResponse } from "next/server";
 
-import { TRUEFORGE_AGENT_NAME } from "@/lib/config";
-import { findResonanceAgent, trueforgeFetch } from "@/lib/trueforge";
+import { TRUEFORGE_FALLBACK_AGENT_NAME } from "@/lib/config";
+import {
+  selectAgentForNewSession,
+  releasePrimaryProbe,
+  recordPrimaryFailure,
+} from "@/lib/model-router";
+import { createTrueforgeSession } from "@/lib/trueforge";
+import { clientAddress, rateLimitResponse, takeRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
-export async function POST() {
+export async function POST(request: Request) {
+  const rateLimit = takeRateLimit(`session:${clientAddress(request)}`, 20, 60_000);
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfterSeconds);
+  const body = (await request.json().catch(() => ({}))) as {
+    forceFallback?: boolean;
+    failure?: string;
+  };
+  if (body.forceFallback) {
+    recordPrimaryFailure(body.failure ?? "Primary model stream failed.");
+  }
+  const selection = body.forceFallback
+    ? {
+        agentName: TRUEFORGE_FALLBACK_AGENT_NAME,
+        provider: "deepseek" as const,
+        probingPrimary: false,
+      }
+    : selectAgentForNewSession();
   try {
-    const agent = await findResonanceAgent();
-    if (!agent) {
-      return NextResponse.json(
-        {
-          error: `No TrueForge agent named '${TRUEFORGE_AGENT_NAME}'. Start the harness and run npm run bootstrap.`,
-        },
-        { status: 503 },
-      );
-    }
-
-    const response = await trueforgeFetch("/api/v1/sessions", {
-      method: "POST",
-      body: JSON.stringify({ agent: { name: agent.name } }),
-    });
-
-    if (!response.ok) {
-      const payload = await response.text();
-      return NextResponse.json(
-        { error: `TrueForge refused the session: ${payload}` },
-        { status: response.status },
-      );
-    }
-
-    const payload = (await response.json()) as { data?: { id: string } };
-    if (!payload.data?.id) {
-      return NextResponse.json(
-        { error: "TrueForge created a session without an id." },
-        { status: 502 },
-      );
-    }
-
+    const sessionId = await createTrueforgeSession(selection.agentName);
     return NextResponse.json({
-      sessionId: payload.data.id,
-      agentName: agent.name,
+      sessionId,
+      agentName: selection.agentName,
+      modelProvider: selection.provider,
+      probingPrimary: selection.probingPrimary,
     });
   } catch (error) {
+    if (selection.probingPrimary) releasePrimaryProbe();
     const message =
       error instanceof Error
         ? error.message

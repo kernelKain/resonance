@@ -11,11 +11,6 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     ".venv/**",
-    // Legacy scratch/debug scripts — not app code, use CommonJS require()
-    "test_parse.js",
-    "test_parse_2.js",
-    "test_parse_3.js",
-    "test_api.mjs",
   ]),
 ]);
 

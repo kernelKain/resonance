@@ -111,20 +111,26 @@ Edit `.env.local` and fill in:
 | `TRUEFORGE_BASE_URL` | optional | Default: `http://127.0.0.1:8790` |
 | `TRUEFORGE_AGENT_NAME` | optional | Default: `resonance` |
 | `TRUEFORGE_MODEL` | optional | Default: `openrouter/minimax-minimax-m-3-free` |
+| `TRUEFORGE_FALLBACK_AGENT_NAME` | optional | Default: `resonance-deepseek` |
+| `TRUEFORGE_FALLBACK_MODEL` | optional | Default: `openrouter/deepseek-deepseek-v4-flash-0731` |
+| `MODEL_COOLDOWN_MS` | optional | MiniMax recovery-probe cooldown; default: `300000` |
+| `UPLOAD_TTL_MS` | optional | Uploaded CSV retention; default: `86400000` (24 hours) |
 | `MCP_URL` | optional | Default: `http://127.0.0.1:8792/mcp` |
 | `TRUEFORGE_SANDBOX_EXEC_TIMEOUT_MS` | optional | Default: `300000` (5 min — needed for pip + sklearn install) |
 
-### 3. Start the UI
+### 3. Start the UI and filesystem service
 
 ```bash
-npm run dev
+npm run resonance
 ```
 
 Open [http://localhost:43123](http://localhost:43123).
 
-### 4. Start TrueForge and the filesystem MCP
+Use `npm run dev` when you only need the Next.js UI.
 
-Follow the TrueForge documentation to start both services with the `resonance` agent configuration from `agent.json`.
+### 4. Start TrueForge
+
+Follow the TrueForge documentation to start the harness with the `resonance` agent configuration from `agent.json`.
 
 ---
 
@@ -135,8 +141,7 @@ Follow the TrueForge documentation to start both services with the `resonance` a
 3. Watch the **Live Analysis** stepper — each stage shows a contextual hint explaining what the AI is doing.
 4. When the agent reaches **Approval**, review the archetypes and Hidden Asks in the panel.
 5. Click **Approve** (or **Decline** to abort). Recommendations are only generated after Approve.
-6. Use **Export PDF** to print the results via the browser print dialog.
-7. Use **Share** to copy a base64-encoded summary link to the clipboard.
+6. Use **Export PDF** to download the complete dark-theme report.
 
 ### Keyboard shortcut
 
@@ -145,6 +150,16 @@ Follow the TrueForge documentation to start both services with the `resonance` a
 | `Ctrl + D` | Toggle Developer mode — shows raw agent output and health status dots |
 
 The **Dev** button in the header provides the same toggle for mouse users.
+
+### Model continuity
+
+MiniMax M3 is the primary model. If a new analysis receives a quota, rate-limit,
+capacity, or retryable provider error before streaming starts, Resonance
+transparently replays that first turn on DeepSeek V4 Flash 0731. The DeepSeek
+fallback has a one-million-token context window and supports structured output
+and tool calling. A run remains pinned to one model through its approval
+checkpoint. After the configured cooldown, a new run probes MiniMax and closes
+the circuit after a successful turn.
 
 ---
 
@@ -180,7 +195,8 @@ resonance/
 │   ├── insight-panel.tsx   # Tabbed panel: Segments / Needs / Red Flags / Recs
 │   ├── agent-output.tsx    # Live Analysis card — stepper + activity log
 │   ├── analysis-progress.tsx # 6-step progress stepper with contextual hints
-│   ├── results-summary.tsx # Executive Summary + Export PDF + Share
+│   ├── results-summary.tsx # Executive Summary + structured PDF export
+│   ├── pdf/                # Branded, paginated dark-theme PDF document
 │   ├── transcript-sidebar.tsx # Dev-mode raw transcript
 │   ├── plutchik-mark.tsx   # Animated SVG logo (dual-ring Plutchik wheel)
 │   ├── approval-modal.tsx  # HITL Approve / Decline dialog
@@ -205,11 +221,10 @@ resonance/
 ## Development
 
 ```bash
-# Type-check without emitting
-npx tsc --noEmit
-
-# Lint (ESLint + react-hooks + typescript-eslint)
+# Run every local quality check
 npm run lint
+npm run typecheck
+npm test
 
 # Format (Prettier via ESLint)
 npm run lint -- --fix

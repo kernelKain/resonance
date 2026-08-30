@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 
 type Theme = "dark" | "light";
 
@@ -25,25 +25,28 @@ export function useTheme() {
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>("dark");
+  const initialized = useRef(false);
 
-  // Hydrate from localStorage on mount (client-only)
-  useEffect(() => {
-    const saved = localStorage.getItem("resonance-theme") as Theme | null;
-    if (saved === "light" || saved === "dark") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTheme(saved);
-    }
-  }, []);
-
-  // Sync .dark class and localStorage whenever theme changes
+  // The inline head script applies the saved class before paint. Mirror that
+  // value into React once mounted without overwriting it on the first effect.
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
+    const initialTheme: Theme = root.classList.contains("dark") ? "dark" : "light";
+    initialized.current = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTheme(initialTheme);
+  }, []);
+
+  useEffect(() => {
+    if (!initialized.current) return;
+    const root = document.documentElement;
+    root.classList.toggle("dark", theme === "dark");
+    root.style.colorScheme = theme;
+    try {
+      localStorage.setItem("resonance-theme", theme);
+    } catch {
+      // Storage can be unavailable in hardened browsing modes.
     }
-    localStorage.setItem("resonance-theme", theme);
   }, [theme]);
 
   function toggleTheme() {

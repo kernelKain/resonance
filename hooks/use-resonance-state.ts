@@ -26,6 +26,11 @@ import {
   type TurnIngest,
 } from "@/lib/trueforge-events";
 import { readSse } from "@/hooks/use-sse-stream";
+import {
+  asProductUrl,
+  hostnameLabel,
+  type ProductIdentity,
+} from "@/lib/product-identity";
 
 /**
  * A single item in the live transcript shown in the sidebar and activity log.
@@ -42,22 +47,10 @@ export type TranscriptItem = {
 
 const HITL_PAUSE_MARKER = "<!-- HITL_PAUSE -->";
 
-/**
- * Derives a short human-readable display name from either a plain product name
- * or a URL. For URLs we extract the hostname (minus www.) and the first path
- * segment if present, e.g. "https://www.amazon.com/dp/B09XYZ" → "amazon.com".
- */
-function deriveDisplayName(productName: string): string {
-  const trimmed = productName.trim();
-  try {
-    const url = new URL(trimmed);
-    const host = url.hostname.replace(/^www\./, "");
-    const firstSegment = url.pathname.split("/").filter(Boolean)[0];
-    return firstSegment ? `${host}/${firstSegment}` : host;
-  } catch {
-    // Not a URL — use as-is
-    return trimmed;
-  }
+export function cleanProductName(input: string): string {
+  const url = asProductUrl(input);
+  if (url) return hostnameLabel(url);
+  return input.trim();
 }
 
 /**
@@ -65,8 +58,9 @@ function deriveDisplayName(productName: string): string {
  * Encodes all necessary parameters (product, file path, row count) inline so
  * the agent can start immediately without additional clarification.
  */
-function excavationPrompt(productName: string, basename: string, rowCount: number) {
-  return `Follow the Emotion Archaeology protocol for product "${productName}". CSV file is ${basename} (${rowCount} reviews). Read it with the filesystem MCP (basename only — never a demo_data/ prefix). Spawn a subagent to research the product with Exa. Score every row. Emit compact JSON (no pretty-print) in every resonance-data fence. Persist scored_reviews.json. Copy scripts/cluster.py into the TrueForge sandbox and run cluster.py there. Emit cluster_results VERBATIM from cluster.py. Then name one archetype per cluster and write 3–5 Hidden Asks with action_items null. Emit analysis_result with scored_reviews [] and cluster_results {}. Then emit approval_request and call ask_user_question with options Approved and Decline. Do not emit action_items until the user answers Approved.`;
+function excavationPrompt(product: ProductIdentity, basename: string, rowCount: number) {
+  const source = product.sourceUrl ? ` Product URL: ${product.sourceUrl}.` : "";
+  return `Follow the Emotion Archaeology protocol for product "${product.name}".${source} CSV file is ${basename} (${rowCount} reviews). Read it with the filesystem MCP (basename only — never a demo_data/ prefix). Spawn a subagent to research the product with Exa. Score every row. Emit compact JSON (no pretty-print) in every resonance-data fence. Persist scored_reviews.json. Copy scripts/cluster.py into the TrueForge sandbox and run cluster.py there. Emit cluster_results VERBATIM from cluster.py. Then name one archetype per cluster and write 3–5 Hidden Asks with action_items null. Emit analysis_result with scored_reviews [] and cluster_results {}. Then emit approval_request and call ask_user_question with options Approved and Decline. Do not emit action_items until the user answers Approved.`;
 }
 
 /**
@@ -132,6 +126,20 @@ function deltaText(event: Record<string, unknown>): string {
   return "";
 }
 
+function turnFailure(event: Record<string, unknown>): string | null {
+  const type = String(event.type ?? "");
+  if (["model.error", "turn.error", "turn.failed"].includes(type)) {
+    return String(event.message ?? event.error ?? "The model stream failed.");
+  }
+  if (type === "turn.done") {
+    const state = event.state as { status?: string; error?: unknown } | undefined;
+    if (state?.status === "failed" || state?.status === "error") {
+      return String(state.error ?? "The model could not complete the turn.");
+    }
+  }
+  return null;
+}
+
 /** Promise-based sleep utility used when retrying failed API calls. */
 function sleep(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -145,6 +153,7 @@ function sleep(ms: number) {
  */
 export function useResonanceState() {
   const [productName, setProductName] = useState("");
+  const [productIdentity, setProductIdentity] = useState<ProductIdentity | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [phase, setPhase] = useState<ResonancePhase>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -157,6 +166,8 @@ export function useResonanceState() {
     filteredRowCount?: number;
   } | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [activeAgentName, setActiveAgentName] = useState<string | null>(null);
+  const [modelProvider, setModelProvider] = useState<"minimax" | "deepseek" | null>(null);
   const [pendingQuestion, setPendingQuestion] = useState<PendingUserQuestion | null>(null);
   const [replayTail, setReplayTail] = useState<string>("");
   const [decisionBusy, setDecisionBusy] = useState(false);
@@ -180,18 +191,35 @@ export function useResonanceState() {
           phase?: ResonancePhase;
           assistant?: string;
           uploadMeta?: { filePath: string; rowCount: number; filteredRowCount?: number } | null;
+          productIdentity?: ProductIdentity | null;
+          sessionId?: string | null;
+          activeAgentName?: string | null;
+          modelProvider?: "minimax" | "deepseek" | null;
+          pendingQuestion?: PendingUserQuestion | null;
         };
         if (saved.productName) setProductName(saved.productName);
+        if (saved.productIdentity) setProductIdentity(saved.productIdentity);
         if (saved.uploadMeta) setUploadMeta(saved.uploadMeta);
-        if (saved.assistant && saved.phase && saved.phase !== "idle") {
+        if (saved.sessionId) setSessionId(saved.sessionId);
+        if (saved.activeAgentName) setActiveAgentName(saved.activeAgentName);
+        if (saved.modelProvider) setModelProvider(saved.modelProvider);
+        if (saved.pendingQuestion) setPendingQuestion(saved.pendingQuestion);
+        if (saved.assistant) {
           assistantRef.current = saved.assistant;
           setAssistant(saved.assistant);
           setStream(extractResonanceStream(saved.assistant));
-          // Restore phase as "done" if it was done or error so the workbench stays visible;
-          // running/awaiting states cannot be safely restored.
-          setPhase(
-            saved.phase === "done" || saved.phase === "error" ? saved.phase : "done",
-          );
+        }
+        if (
+          saved.phase === "awaiting_approval" &&
+          saved.sessionId &&
+          saved.pendingQuestion
+        ) {
+          setPhase("awaiting_approval");
+        } else if (saved.phase === "running" || saved.phase === "uploading") {
+          setPhase("error");
+          setError("The live connection ended during refresh. Start a new run to analyze again.");
+        } else if (saved.phase && saved.phase !== "idle") {
+          setPhase(saved.phase);
         }
       } catch {
         // Silently ignore malformed session data
@@ -210,12 +238,42 @@ export function useResonanceState() {
     try {
       sessionStorage.setItem(
         "resonance_session",
-        JSON.stringify({ productName: name, phase: currentPhase, assistant: assistantText, uploadMeta: meta }),
+        JSON.stringify({
+          productName: name,
+          productIdentity,
+          phase: currentPhase,
+          assistant: assistantText,
+          uploadMeta: meta,
+          sessionId,
+          activeAgentName,
+          modelProvider,
+          pendingQuestion,
+        }),
       );
     } catch {
       // Storage quota exceeded or unavailable — fail silently
     }
   }
+
+  useEffect(() => {
+    if (phase === "idle") return;
+    const timer = window.setTimeout(() => {
+      saveSession(cleanProductName(productName), phase, assistant, uploadMeta);
+    }, 100);
+    return () => window.clearTimeout(timer);
+    // saveSession intentionally captures the complete current session state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    activeAgentName,
+    assistant,
+    modelProvider,
+    pendingQuestion,
+    phase,
+    productIdentity,
+    productName,
+    sessionId,
+    uploadMeta,
+  ]);
   // ─────────────────────────────────────────────────────────────────────────────
 
   function cancelFlush() {
@@ -230,7 +288,7 @@ export function useResonanceState() {
     setAssistant(assistantRef.current);
     setStream(extractResonanceStream(assistantRef.current));
     // Persist after every flush so a refresh restores the latest state
-    saveSession(productName, phase, assistantRef.current, uploadMeta);
+    saveSession(cleanProductName(productName), phase, assistantRef.current, uploadMeta);
   }
 
   function resetStream() {
@@ -242,9 +300,22 @@ export function useResonanceState() {
     setPendingQuestion(null);
     setReplayTail("");
     setSessionId(null);
+    setActiveAgentName(null);
+    setModelProvider(null);
     setDecisionBusy(false);
     // Clear saved session on a fresh run
     try { sessionStorage.removeItem("resonance_session"); } catch { /* ignore */ }
+  }
+
+  function resetRun() {
+    replayCancelRef.current = true;
+    resetStream();
+    setFile(null);
+    setProductName("");
+    setProductIdentity(null);
+    setUploadMeta(null);
+    setError(null);
+    setPhase("idle");
   }
 
   function ingestAssistantChunk(piece: string) {
@@ -258,6 +329,23 @@ export function useResonanceState() {
     });
   }
 
+  async function resolveProductIdentity(input: string): Promise<ProductIdentity> {
+    const url = asProductUrl(input);
+    if (!url) return { name: input.trim() };
+    try {
+      const response = await fetch("/api/product-metadata", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ url: url.toString() }),
+      });
+      const payload = (await response.json()) as ProductIdentity & { error?: string };
+      if (response.ok && payload.name) return payload;
+    } catch {
+      // Metadata improves display but must not block an analysis.
+    }
+    return { name: hostnameLabel(url), sourceUrl: url.toString() };
+  }
+
   async function loadSample() {
     try {
       const response = await fetch("/demo/hero_reviews.csv", { cache: "no-store" });
@@ -265,6 +353,7 @@ export function useResonanceState() {
       const blob = await response.blob();
       setFile(new File([blob], "hero_reviews.csv", { type: "text/csv" }));
       setProductName("Linear");
+      setProductIdentity({ name: "Linear", sourceUrl: "https://linear.app" });
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "Could not load demo dataset.";
       setError(message);
@@ -276,6 +365,7 @@ export function useResonanceState() {
     const blob = await response.blob();
     setFile(new File([blob], "scoring_fixture.csv", { type: "text/csv" }));
     setProductName("Linear");
+    setProductIdentity({ name: "Linear", sourceUrl: "https://linear.app" });
   }
 
   async function replayFixture() {
@@ -364,24 +454,40 @@ export function useResonanceState() {
     }
   }
 
-  async function openSession(): Promise<string> {
-    const sessionRes = await fetch("/api/session", { method: "POST" });
+  async function openSession(
+    forceFallback = false,
+    failure?: string,
+  ): Promise<{ sessionId: string; agentName: string }> {
+    const sessionRes = await fetch("/api/session", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ forceFallback, failure }),
+    });
     const sessionJson = (await sessionRes.json()) as {
       sessionId?: string;
+      agentName?: string;
+      modelProvider?: "minimax" | "deepseek";
       error?: string;
     };
-    if (!sessionRes.ok || !sessionJson.sessionId) {
+    if (!sessionRes.ok || !sessionJson.sessionId || !sessionJson.agentName) {
       throw new Error(sessionJson.error ?? "Could not open a TrueForge session.");
     }
     setSessionId(sessionJson.sessionId);
-    return sessionJson.sessionId;
+    setActiveAgentName(sessionJson.agentName);
+    setModelProvider(sessionJson.modelProvider ?? "minimax");
+    return { sessionId: sessionJson.sessionId, agentName: sessionJson.agentName };
   }
 
-  async function streamTurn(nextSessionId: string, body: Record<string, unknown>) {
+  async function streamTurn(
+    nextSessionId: string,
+    body: Record<string, unknown>,
+    turnAgentName = activeAgentName,
+    allowFallback = true,
+  ) {
     const turnRes = await fetch("/api/turn", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ sessionId: nextSessionId, ...body }),
+      body: JSON.stringify({ sessionId: nextSessionId, agentName: turnAgentName, ...body }),
     });
 
     if (!turnRes.ok) {
@@ -389,13 +495,36 @@ export function useResonanceState() {
       throw new Error(failed.error ?? "TrueForge turn failed.");
     }
 
+    const routedSessionId = turnRes.headers.get("x-resonance-session-id");
+    const routedAgentName = turnRes.headers.get("x-resonance-agent-name");
+    const routedProvider = turnRes.headers.get("x-resonance-model-provider");
+    if (routedSessionId) setSessionId(routedSessionId);
+    if (routedAgentName) setActiveAgentName(routedAgentName);
+    if (routedProvider === "minimax" || routedProvider === "deepseek") {
+      setModelProvider(routedProvider);
+      if (routedProvider === "deepseek") {
+        setTranscript((current) => [
+          ...current,
+          {
+            id: crypto.randomUUID(),
+            kind: "status",
+            text: "MiniMax is temporarily unavailable. Analysis continued with DeepSeek V4 Flash.",
+          },
+        ]);
+      }
+    }
+
     const messages = new Map<string, Record<string, unknown>>();
     let ingest: TurnIngest = { pending: pendingQuestion, paused: false };
+    let streamFailure: string | null = null;
+    let producedAssistantText = false;
 
     await readSse(turnRes, (event) => {
       ingest = applyTurnEvent(event, messages, ingest);
+      streamFailure ??= turnFailure(event);
       const piece = deltaText(event);
       if (piece) {
+        producedAssistantText = true;
         ingestAssistantChunk(piece);
         return;
       }
@@ -404,6 +533,24 @@ export function useResonanceState() {
         setTranscript((current) => [...current, item]);
       }
     });
+
+    if (streamFailure && allowFallback && body.message && !producedAssistantText) {
+      const fallback = await openSession(true, streamFailure);
+      setTranscript((current) => [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          kind: "status",
+          text: "MiniMax could not start the analysis. Retrying with DeepSeek V4 Flash.",
+        },
+      ]);
+      await streamTurn(fallback.sessionId, body, fallback.agentName, false);
+      return;
+    }
+
+    if (streamFailure) {
+      throw new Error(streamFailure);
+    }
 
     flushAssistant();
     extractResonanceStream(assistantRef.current);
@@ -424,7 +571,7 @@ export function useResonanceState() {
 
     setPendingQuestion(null);
     setPhase("done");
-    saveSession(productName, "done", assistantRef.current, uploadMeta);
+    saveSession(cleanProductName(productName), "done", assistantRef.current, uploadMeta);
   }
 
   async function runExcavation() {
@@ -457,12 +604,17 @@ export function useResonanceState() {
         filteredRowCount: uploadJson.filteredRowCount,
       });
 
-      const nextSessionId = await openSession();
+      const nextSession = await openSession();
       const basename =
         uploadJson.filename ?? uploadJson.filePath.split("/").pop() ?? file.name;
-      // Use the display-safe name in the prompt (resolves raw URLs to hostname)
-      const displayName = deriveDisplayName(productName) || basename;
-      const message = excavationPrompt(displayName, basename, effectiveRowCount);
+      const identity = await resolveProductIdentity(productName);
+      const resolvedIdentity = {
+        ...identity,
+        name: identity.name || cleanProductName(productName) || basename,
+      };
+      setProductIdentity(resolvedIdentity);
+      setProductName(resolvedIdentity.name);
+      const message = excavationPrompt(resolvedIdentity, basename, effectiveRowCount);
 
       setTranscript([
         {
@@ -472,7 +624,7 @@ export function useResonanceState() {
         },
       ]);
       setPhase("running");
-      await streamTurn(nextSessionId, { message });
+      await streamTurn(nextSession.sessionId, { message }, nextSession.agentName);
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "Run failed.";
       setError(message);
@@ -485,11 +637,12 @@ export function useResonanceState() {
     setError(null);
     resetStream();
     setUploadMeta({ filePath: "HITL_SMOKE", rowCount: 0 });
-    setProductName("Linear");
+    const cleanName = cleanProductName(productName);
+    setProductName(cleanName);
 
     try {
-      const nextSessionId = await openSession();
-      const message = "HITL_SMOKE. Pause for approval. Do not read a CSV.";
+      const nextSession = await openSession();
+      const message = `HITL_SMOKE for ${cleanName}. Pause for approval. Do not read a CSV.`;
       setTranscript([
         {
           id: crypto.randomUUID(),
@@ -498,7 +651,7 @@ export function useResonanceState() {
         },
       ]);
       setPhase("running");
-      await streamTurn(nextSessionId, { message });
+      await streamTurn(nextSession.sessionId, { message }, nextSession.agentName);
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "HITL smoke failed.";
       setError(message);
@@ -561,6 +714,7 @@ export function useResonanceState() {
   return {
     productName,
     setProductName,
+    productIdentity,
     file,
     setFile,
     phase,
@@ -571,6 +725,7 @@ export function useResonanceState() {
     uploadMeta,
     pendingQuestion,
     decisionBusy,
+    modelProvider,
     replayCancelRef,
     loadSample,
     loadScoringFixture,
@@ -579,5 +734,6 @@ export function useResonanceState() {
     runExcavation,
     runHitlSmoke,
     decide,
+    resetRun,
   };
 }

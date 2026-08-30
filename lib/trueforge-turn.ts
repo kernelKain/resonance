@@ -6,6 +6,7 @@ export type ToolResponseInput = {
 
 export type TurnRequest = {
   sessionId?: string;
+  agentName?: string;
   message?: string;
   toolResponse?: ToolResponseInput;
 };

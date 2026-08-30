@@ -39,12 +39,11 @@ export function ResonanceApp() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const health = useHealthPolling(5000);
-
   const state = useResonanceState();
   const {
     productName,
     setProductName,
+    productIdentity,
     file,
     setFile,
     phase,
@@ -55,7 +54,7 @@ export function ResonanceApp() {
     uploadMeta,
     pendingQuestion,
     decisionBusy,
-    replayCancelRef,
+    modelProvider,
     loadSample,
     loadScoringFixture,
     replayFixture,
@@ -63,6 +62,7 @@ export function ResonanceApp() {
     runExcavation,
     runHitlSmoke,
     decide,
+    resetRun,
   } = state;
 
   const canRun = Boolean(productName.trim() && file);
@@ -72,6 +72,7 @@ export function ResonanceApp() {
     phase === "done" ||
     (phase === "error" && Boolean(uploadMeta || assistant));
 
+  const health = useHealthPolling(15_000, devMode || !showWorkbench);
   const harnessReady = Boolean(health?.trueforge && health?.filesystemMcp && health?.agent);
 
   const statusLine = useMemo(
@@ -202,27 +203,37 @@ export function ResonanceApp() {
             >
             <div className="space-y-5">
               <div className="flex flex-wrap items-end justify-between gap-4">
-                <div className="min-w-0">
+                <div className="flex min-w-0 items-center gap-3">
+                  {productIdentity?.logoUrl ? (
+                    // Product favicons are discovered from user-supplied public URLs.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={productIdentity.logoUrl}
+                      alt=""
+                      className="size-11 shrink-0 rounded-xl border border-border bg-card object-contain p-1.5"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : null}
+                  <div className="min-w-0">
                   <p className="font-mono text-[11px] tracking-[0.24em] text-cyan-300 uppercase">
-                    Live analysis
+                    Live Analysis
                   </p>
                   <h2 className="heading-gradient mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-                    {(() => {
-                      const t = productName.trim();
-                      try { const u = new URL(t); return u.hostname.replace(/^www\./, ""); }
-                      catch { return t || "Analysis"; }
-                    })()}
+                    {productIdentity?.name || productName.trim() || "Analysis"}
                   </h2>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground" aria-live="polite">
                     {statusLine}
                   </p>
+                  {modelProvider ? (
+                    <Badge variant="outline" className="mt-2 font-mono text-[10px] uppercase">
+                      {modelProvider === "minimax" ? "MiniMax M3" : "DeepSeek V4 Flash"}
+                    </Badge>
+                  ) : null}
+                  </div>
                 </div>
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    replayCancelRef.current = true;
-                    window.location.reload();
-                  }}
+                  onClick={resetRun}
                 >
                   New run
                 </Button>
@@ -282,18 +293,22 @@ export function ResonanceApp() {
                 <InsightPanel stream={stream} />
               </div>
 
-              {phase === "done" && !devMode ? (
-                <ResultsSummary stream={stream} productName={productName} />
-              ) : (
-                <AgentOutput
+              <AgentOutput
+                stream={stream}
+                phase={phase}
+                assistant={assistant}
+                error={error}
+                devMode={devMode}
+                transcript={transcript}
+              />
+              {phase === "done" ? (
+                <ResultsSummary
                   stream={stream}
-                  phase={phase}
-                  assistant={assistant}
-                  error={error}
-                  devMode={devMode}
-                  transcript={transcript}
+                  productName={productIdentity?.name || productName}
+                  productIdentity={productIdentity}
+                  modelProvider={modelProvider}
                 />
-              )}
+              ) : null}
             </div>
             </motion.div>
           )}

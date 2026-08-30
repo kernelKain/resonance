@@ -238,7 +238,8 @@ export function statusTextFromStream(
   if (phase === "uploading") return "Uploading your reviews…";
   if (phase === "error") return error ?? "Something broke.";
   if (stream.actionItems) {
-    return "Analysis complete.";
+    const recommendations = stream.actionItems.items.length;
+    return `Analysis complete with ${recommendations} recommendation${recommendations === 1 ? "" : "s"}.`;
   }
   if (phase === "awaiting_approval" || (stream.approval && !stream.actionItems)) {
     return (

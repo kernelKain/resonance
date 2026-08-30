@@ -206,31 +206,31 @@ export function InsightPanel({ stream }: { stream: ResonanceStreamState }) {
               <TabsTrigger value="archetypes" className="group relative flex items-center gap-1.5 whitespace-nowrap rounded-none px-3 py-2.5 text-xs sm:text-sm after:hidden">
                 <Users className="size-3.5 shrink-0" />
                 <span>Segments ({archetypes.length})</span>
-                <span className="hidden xl:inline-flex"><InfoTooltip content="Distinct behavioral profiles identified by clustering emotional signatures and phrasing patterns across reviews." /></span>
-                <motion.div layoutId="activeTab" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-[state=active]:block" />
+                <span className="hidden md:inline-flex"><InfoTooltip content="Distinct behavioral profiles identified by clustering emotional signatures and phrasing patterns across reviews." /></span>
+                <motion.div layoutId="activeTabIndicator" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-active:block" />
               </TabsTrigger>
               <TabsTrigger value="asks" className="group relative flex items-center gap-1.5 whitespace-nowrap rounded-none px-3 py-2.5 text-xs sm:text-sm after:hidden">
                 <Sparkles className="size-3.5 shrink-0" />
                 <span>Unspoken Needs ({asks.length})</span>
-                <span className="hidden xl:inline-flex"><InfoTooltip content="Latent desires that users express through emotional subtext rather than direct feature requests." /></span>
-                <motion.div layoutId="activeTab" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-[state=active]:block" />
+                <span className="hidden md:inline-flex"><InfoTooltip content="Latent desires that users express through emotional subtext rather than direct feature requests." /></span>
+                <motion.div layoutId="activeTabIndicator" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-active:block" />
               </TabsTrigger>
               <TabsTrigger value="dissonance" className="group relative flex items-center gap-1.5 whitespace-nowrap rounded-none px-3 py-2.5 text-xs sm:text-sm after:hidden">
                 <AlertTriangle className="size-3.5 shrink-0" />
                 <span>Red Flags ({alerts.length})</span>
-                <span className="hidden xl:inline-flex"><InfoTooltip content="Cognitive dissonance detected when a user's literal words contradict their underlying emotional state." /></span>
-                <motion.div layoutId="activeTab" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-[state=active]:block" />
+                <span className="hidden md:inline-flex"><InfoTooltip content="Cognitive dissonance detected when a user's literal words contradict their underlying emotional state." /></span>
+                <motion.div layoutId="activeTabIndicator" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-active:block" />
               </TabsTrigger>
               <TabsTrigger value="actions" className="group relative flex items-center gap-1.5 whitespace-nowrap rounded-none px-3 py-2.5 text-xs sm:text-sm after:hidden">
                 <Waypoints className="size-3.5 shrink-0" />
                 <span>Recommendations ({actions.length})</span>
-                <motion.div layoutId="activeTab" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-[state=active]:block" />
+                <motion.div layoutId="activeTabIndicator" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-active:block" />
               </TabsTrigger>
             </TabsList>
           </div>
 
           <TabsContent value="archetypes" data-tab-section="Customer Segments">
-            <ScrollArea className="h-[28rem] pr-2">
+            <ScrollArea className="h-[min(28rem,60vh)] min-h-72 pr-2">
               {archetypes.length ? (
                 <div className="space-y-4 py-2">
                   {archetypes.map((archetype, i) => (
@@ -253,7 +253,7 @@ export function InsightPanel({ stream }: { stream: ResonanceStreamState }) {
           </TabsContent>
 
           <TabsContent value="asks" data-tab-section="Unspoken Needs">
-            <ScrollArea className="h-[28rem] pr-2">
+            <ScrollArea className="h-[min(28rem,60vh)] min-h-72 pr-2">
               {asks.length ? (
                 <div className="space-y-4 py-2">
                   {asks.map((ask, i) => (
@@ -276,7 +276,7 @@ export function InsightPanel({ stream }: { stream: ResonanceStreamState }) {
           </TabsContent>
 
           <TabsContent value="dissonance" data-tab-section="Red Flags">
-            <ScrollArea className="h-[28rem] pr-2">
+            <ScrollArea className="h-[min(28rem,60vh)] min-h-72 pr-2">
               {alerts.length ? (
                 <div className="space-y-4 py-2">
                   {alerts.map((alert, i) => (
@@ -299,7 +299,7 @@ export function InsightPanel({ stream }: { stream: ResonanceStreamState }) {
           </TabsContent>
 
           <TabsContent value="actions" data-tab-section="Recommendations">
-            <ScrollArea className="h-[28rem] pr-2">
+            <ScrollArea className="h-[min(28rem,60vh)] min-h-72 pr-2">
               {actions.length ? (
                 <div className="space-y-4 py-2">
                   {actions.map((item, i) => (
