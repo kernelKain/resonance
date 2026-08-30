@@ -2,7 +2,6 @@
 
 > **Customer emotion archaeology powered by Plutchik's Wheel**
 
-[![CI](https://github.com/kernelKain/resonance/actions/workflows/ci.yml/badge.svg)](https://github.com/kernelKain/resonance/actions/workflows/ci.yml)
 [![Live demo](https://img.shields.io/badge/live_demo-trycloudflare-00C7B7)](https://graphics-newsletters-usr-simplified.trycloudflare.com)
 [![License: MIT](https://img.shields.io/badge/license-MIT-cyan.svg)](LICENSE)
 
@@ -125,9 +124,9 @@ A Hidden Ask is the need the pattern implies that **no review filed as a ticket*
 
 ---
 
-## Architecture
+## Tech stack
 
-Three processes. Do not collapse them.
+Three processes. Do not collapse them — the UI never calls the model, the agent never clusters on the laptop, and clustering never invents archetypes.
 
 ```text
 Browser  :43123  Next.js UI (upload, SSE parse, radar, HITL modal)
@@ -138,6 +137,25 @@ TrueForge :8790  Agent "resonance"  (OpenRouter model, HITL, subagents)
                 |-- remote MCP Exa         https://mcp.exa.ai/mcp
                 +-- Daytona sandbox        /home/trueforge/  (cluster.py + sklearn)
 ```
+
+### Why this stack
+
+| Layer | Choice | Why this, not something else |
+| --- | --- | --- |
+| Workbench | **Next.js 16** (App Router) + **React 19** | Upload, session, turn, and health live as same-origin API routes next to the UI. The browser streams SSE from `/api/turn` and paints the Plutchik radar without a second backend. |
+| Types | **TypeScript** + **Zod** | `resonance-data` fences are contracts. Zod validates MCP inputs; TS keeps the stream parser, model router, and PDF document on the same types. |
+| UI | **Tailwind CSS 4** + **shadcn / Base UI** | A dark-first workbench (radar, HITL modal, segment cards) without inventing a component system. |
+| Charts | **Recharts** | Eight independent emotion axes as a radar — the one visualization the product is about. |
+| Motion | **Framer Motion** | Live stepper and panel transitions while the agent is still streaming, without blocking the SSE reader. |
+| PDF | **`@react-pdf/renderer`** | Dark-theme report generated in the browser. No extra service, no headless Chrome on the ARM VM. |
+| Harness | **TrueForge** | The hackathon target: filesystem MCP, Exa, Daytona sandbox, dynamic subagents, and `ask_user_question` as a real interrupt — not a fake “are you sure?” button in React. |
+| Models | **OpenRouter** — MiniMax M3, DeepSeek V4 Flash fallback | One API for two models. MiniMax is the primary; if the first turn hits quota or capacity, the session replays on DeepSeek and stays pinned through HITL. |
+| Files | **Filesystem MCP** (`@modelcontextprotocol/sdk` + Express) | The agent reads CSVs by basename and writes `scored_reviews.json` / `cluster_results.json`. It never sees the rest of the VM disk. |
+| Research | **Exa MCP** | Semantic web search so a subagent can brief the product category before scoring. “I love it” on a food app is not “I love it” on a bank. |
+| Clustering | **Daytona sandbox** + **Python** (`scikit-learn`, pandas, numpy) | k-means with silhouette-selected *k* in 3–5 runs **inside** the sandbox. The model copies `cluster.py` in; it does not recompute clusters in prose. |
+| Packaged run | **Docker Compose** | UI, MCP, and TrueForge are three services with health checks. Compose is how the VM stays up; `npm run resonance` is the laptop equivalent. |
+| Host | **Oracle Always Free ARM** (Mumbai) | Always-on demo. Nothing runs on a laptop. |
+| Public URL | **Cloudflare Quick Tunnel** | HTTPS without opening 80/443/43123 on the VCN and without buying a domain. SSH 22 is the only public port. |
 
 ---
 
