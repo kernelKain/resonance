@@ -4,6 +4,7 @@ import net from "node:net";
 import { NextResponse } from "next/server";
 
 import { asProductUrl, hostnameLabel } from "@/lib/product-identity";
+import { clientAddress, rateLimitResponse, takeRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -150,6 +151,8 @@ function pageIdentity(html: string, url: URL) {
 }
 
 export async function POST(request: Request) {
+  const rateLimit = takeRateLimit(`metadata:${clientAddress(request)}`, 20, 60_000);
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfterSeconds);
   try {
     const body = (await request.json()) as { url?: string };
     const url = asProductUrl(body.url ?? "");

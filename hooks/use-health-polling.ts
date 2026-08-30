@@ -7,10 +7,11 @@ export type Health = {
   agentName: string;
 };
 
-export function useHealthPolling(intervalMs = 5000) {
+export function useHealthPolling(intervalMs = 15_000, enabled = true) {
   const [health, setHealth] = useState<Health | null>(null);
 
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
 
     async function tick() {
@@ -42,7 +43,7 @@ export function useHealthPolling(intervalMs = 5000) {
       window.clearInterval(timer);
       window.clearTimeout(immediate);
     };
-  }, [intervalMs]);
+  }, [enabled, intervalMs]);
 
   return health;
 }

@@ -10,6 +10,7 @@ import {
 } from "@/lib/model-router";
 import { createTrueforgeSession } from "@/lib/trueforge";
 import { buildTurnInput, type TurnRequest } from "@/lib/trueforge-turn";
+import { clientAddress, rateLimitResponse, takeRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const maxDuration = 600;
@@ -44,6 +45,8 @@ function streamResponse(
 }
 
 export async function POST(request: Request) {
+  const rateLimit = takeRateLimit(`turn:${clientAddress(request)}`, 30, 60_000);
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfterSeconds);
   const body = (await request.json()) as TurnRequest;
   if (!body.sessionId) {
     return Response.json({ error: "sessionId is required." }, { status: 400 });

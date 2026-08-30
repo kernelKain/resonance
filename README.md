@@ -114,6 +114,7 @@ Edit `.env.local` and fill in:
 | `TRUEFORGE_FALLBACK_AGENT_NAME` | optional | Default: `resonance-deepseek` |
 | `TRUEFORGE_FALLBACK_MODEL` | optional | Default: `openrouter/deepseek-deepseek-v4-flash-0731` |
 | `MODEL_COOLDOWN_MS` | optional | MiniMax recovery-probe cooldown; default: `300000` |
+| `UPLOAD_TTL_MS` | optional | Uploaded CSV retention; default: `86400000` (24 hours) |
 | `MCP_URL` | optional | Default: `http://127.0.0.1:8792/mcp` |
 | `TRUEFORGE_SANDBOX_EXEC_TIMEOUT_MS` | optional | Default: `300000` (5 min — needed for pip + sklearn install) |
 

@@ -39,8 +39,6 @@ export function ResonanceApp() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const health = useHealthPolling(5000);
-
   const state = useResonanceState();
   const {
     productName,
@@ -74,6 +72,7 @@ export function ResonanceApp() {
     phase === "done" ||
     (phase === "error" && Boolean(uploadMeta || assistant));
 
+  const health = useHealthPolling(15_000, devMode || !showWorkbench);
   const harnessReady = Boolean(health?.trueforge && health?.filesystemMcp && health?.agent);
 
   const statusLine = useMemo(

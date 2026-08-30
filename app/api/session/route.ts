@@ -7,10 +7,13 @@ import {
   recordPrimaryFailure,
 } from "@/lib/model-router";
 import { createTrueforgeSession } from "@/lib/trueforge";
+import { clientAddress, rateLimitResponse, takeRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const rateLimit = takeRateLimit(`session:${clientAddress(request)}`, 20, 60_000);
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfterSeconds);
   const body = (await request.json().catch(() => ({}))) as {
     forceFallback?: boolean;
     failure?: string;

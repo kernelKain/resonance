@@ -192,19 +192,34 @@ export function useResonanceState() {
           assistant?: string;
           uploadMeta?: { filePath: string; rowCount: number; filteredRowCount?: number } | null;
           productIdentity?: ProductIdentity | null;
+          sessionId?: string | null;
+          activeAgentName?: string | null;
+          modelProvider?: "minimax" | "deepseek" | null;
+          pendingQuestion?: PendingUserQuestion | null;
         };
         if (saved.productName) setProductName(saved.productName);
         if (saved.productIdentity) setProductIdentity(saved.productIdentity);
         if (saved.uploadMeta) setUploadMeta(saved.uploadMeta);
-        if (saved.assistant && saved.phase && saved.phase !== "idle") {
+        if (saved.sessionId) setSessionId(saved.sessionId);
+        if (saved.activeAgentName) setActiveAgentName(saved.activeAgentName);
+        if (saved.modelProvider) setModelProvider(saved.modelProvider);
+        if (saved.pendingQuestion) setPendingQuestion(saved.pendingQuestion);
+        if (saved.assistant) {
           assistantRef.current = saved.assistant;
           setAssistant(saved.assistant);
           setStream(extractResonanceStream(saved.assistant));
-          // Restore phase as "done" if it was done or error so the workbench stays visible;
-          // running/awaiting states cannot be safely restored.
-          setPhase(
-            saved.phase === "done" || saved.phase === "error" ? saved.phase : "done",
-          );
+        }
+        if (
+          saved.phase === "awaiting_approval" &&
+          saved.sessionId &&
+          saved.pendingQuestion
+        ) {
+          setPhase("awaiting_approval");
+        } else if (saved.phase === "running" || saved.phase === "uploading") {
+          setPhase("error");
+          setError("The live connection ended during refresh. Start a new run to analyze again.");
+        } else if (saved.phase && saved.phase !== "idle") {
+          setPhase(saved.phase);
         }
       } catch {
         // Silently ignore malformed session data
@@ -229,12 +244,36 @@ export function useResonanceState() {
           phase: currentPhase,
           assistant: assistantText,
           uploadMeta: meta,
+          sessionId,
+          activeAgentName,
+          modelProvider,
+          pendingQuestion,
         }),
       );
     } catch {
       // Storage quota exceeded or unavailable — fail silently
     }
   }
+
+  useEffect(() => {
+    if (phase === "idle") return;
+    const timer = window.setTimeout(() => {
+      saveSession(cleanProductName(productName), phase, assistant, uploadMeta);
+    }, 100);
+    return () => window.clearTimeout(timer);
+    // saveSession intentionally captures the complete current session state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    activeAgentName,
+    assistant,
+    modelProvider,
+    pendingQuestion,
+    phase,
+    productIdentity,
+    productName,
+    sessionId,
+    uploadMeta,
+  ]);
   // ─────────────────────────────────────────────────────────────────────────────
 
   function cancelFlush() {

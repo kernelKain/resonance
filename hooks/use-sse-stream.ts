@@ -6,25 +6,37 @@ export async function readSse(
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  let lastEventId = "";
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const chunks = buffer.split("\n\n");
-    buffer = chunks.pop() ?? "";
-    for (const chunk of chunks) {
-      const data = chunk
+  function ingestChunk(chunk: string) {
+    const eventId = chunk
+      .split("\n")
+      .find((line) => line.startsWith("id:"))
+      ?.slice(3)
+      .trim();
+    if (eventId && eventId === lastEventId) return;
+    const data = chunk
         .split("\n")
         .filter((line) => line.startsWith("data:"))
         .map((line) => line.slice(5).trimStart())
         .join("\n");
-      if (!data || data === "[DONE]") continue;
-      try {
-        onEvent(JSON.parse(data) as Record<string, unknown>);
-      } catch {
-        // Ignore malformed keep-alives.
-      }
+    if (!data || data === "[DONE]") return;
+    try {
+      onEvent(JSON.parse(data) as Record<string, unknown>);
+      if (eventId) lastEventId = eventId;
+    } catch {
+      // Ignore malformed keep-alives.
     }
   }
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true }).replaceAll("\r\n", "\n");
+    const chunks = buffer.split("\n\n");
+    buffer = chunks.pop() ?? "";
+    for (const chunk of chunks) ingestChunk(chunk);
+  }
+  buffer += decoder.decode();
+  if (buffer.trim()) ingestChunk(buffer);
 }

@@ -1,9 +1,10 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readdir, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 
-import { UPLOAD_DIR } from "@/lib/config";
+import { UPLOAD_DIR, UPLOAD_TTL_MS } from "@/lib/config";
 import { parseCsv, requireReviewTextColumn } from "@/lib/csv";
+import { clientAddress, rateLimitResponse, takeRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
@@ -23,7 +24,26 @@ function serialiseCsv(headers: string[], rows: Record<string, string>[]): string
   return lines.join("\n");
 }
 
+async function removeExpiredUploads(now = Date.now()) {
+  try {
+    const entries = await readdir(UPLOAD_DIR);
+    await Promise.all(
+      entries
+        .filter((name) => name.startsWith("reviews_"))
+        .map(async (name) => {
+          const fullPath = path.join(UPLOAD_DIR, name);
+          const info = await stat(fullPath);
+          if (now - info.mtimeMs > UPLOAD_TTL_MS) await unlink(fullPath);
+        }),
+    );
+  } catch {
+    // Cleanup is opportunistic and must not prevent a new upload.
+  }
+}
+
 export async function POST(request: Request) {
+  const rateLimit = takeRateLimit(`upload:${clientAddress(request)}`, 12, 60_000);
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfterSeconds);
   try {
     const form = await request.formData();
     const file = form.get("file");
@@ -82,6 +102,7 @@ export async function POST(request: Request) {
     const csvToWrite = serialiseCsv(parsed.headers, rowsToWrite);
 
     await mkdir(UPLOAD_DIR, { recursive: true });
+    await removeExpiredUploads();
     const stamp = Date.now();
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
     const filename = `reviews_${stamp}_${safeName}`;

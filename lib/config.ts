@@ -21,3 +21,7 @@ export const MCP_BASE_URL =
   process.env.MCP_BASE_URL ?? "http://127.0.0.1:8792";
 
 export const UPLOAD_DIR = process.env.UPLOAD_DIR ?? "uploads";
+
+export const UPLOAD_TTL_MS = Number(
+  process.env.UPLOAD_TTL_MS ?? 24 * 60 * 60 * 1000,
+);
