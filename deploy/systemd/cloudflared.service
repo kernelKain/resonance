@@ -1,0 +1,14 @@
+[Unit]
+Description=Cloudflare Tunnel for Resonance
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/opt/resonance/.env
+ExecStart=/bin/sh -c 'exec /usr/bin/cloudflared tunnel --no-autoupdate run --token "$CLOUDFLARE_TUNNEL_TOKEN"'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

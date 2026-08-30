@@ -1,0 +1,17 @@
+[Unit]
+Description=Resonance Next.js UI
+After=network.target resonance-mcp.service resonance-trueforge.service resonance-bootstrap.service
+Requires=resonance-mcp.service resonance-trueforge.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/resonance
+EnvironmentFile=/opt/resonance/.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

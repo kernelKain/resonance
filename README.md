@@ -138,6 +138,20 @@ TrueForge :8790  Agent "resonance"  (OpenRouter model, HITL, subagents)
 
 ---
 
+## Deploy (VM, nothing local)
+
+Oracle Always Free ARM VM + Docker Compose + Cloudflare Tunnel. TrueForge and the filesystem MCP stay on loopback; only the UI is published.
+
+Copy-paste runbook, Compose file, and systemd units: **[`deploy/README.md`](deploy/README.md)**.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kernelKain/resonance/main/deploy/install-vm.sh | sudo bash
+sudo nano /opt/resonance/.env    # OPENROUTER_API_KEY, DAYTONA_API_KEY
+sudo systemctl start resonance-compose
+```
+
+---
+
 ## Setup
 
 ### Prerequisites
@@ -264,6 +278,8 @@ resonance/
 │   └── cluster.py          # k-means clustering (runs in Daytona sandbox)
 ├── demo_data/Results/      # Linear, Zomato, Cursor demo CSVs, screenshots, PDFs
 ├── public/demo/            # Sample CSVs and stream fixtures for the UI
+├── deploy/                 # Oracle VM runbook, systemd units, install script
+├── docker-compose.yml      # UI + MCP + TrueForge (+ optional Cloudflare Tunnel)
 ├── agent.json              # TrueForge agent configuration (do not commit secrets)
 └── .env.example
 ```

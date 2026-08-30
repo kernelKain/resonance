@@ -1,0 +1,20 @@
+[Unit]
+Description=TrueForge harness (Resonance)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/resonance
+EnvironmentFile=/opt/resonance/.env
+Environment=PORT=8790
+Environment=SQLITE_PATH=/opt/resonance/data/trueforge.sqlite
+ExecStartPre=/usr/bin/mkdir -p /opt/resonance/data
+ExecStart=/usr/bin/npx --yes @truefoundry/trueforge@latest
+Restart=always
+RestartSec=5
+TimeoutStartSec=120
+TimeoutStopSec=40
+
+[Install]
+WantedBy=multi-user.target

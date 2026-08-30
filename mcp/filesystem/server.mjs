@@ -12,6 +12,10 @@ const ALLOWED_DIRS = ALLOWED_DIR_NAMES.map((dir) => path.join(ROOT, dir));
 const ANALYSIS_DIR = path.join(ROOT, "analysis");
 const HOST = process.env.MCP_HOST ?? "127.0.0.1";
 const PORT = Number(process.env.MCP_PORT ?? 8792);
+const ALLOWED_HOSTS = (process.env.MCP_ALLOWED_HOSTS ?? "127.0.0.1,localhost")
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean);
 /** Keep in sync with MAX_ANALYZED_REVIEWS in lib/csv.ts */
 const MAX_ANALYZED_REVIEWS = 50;
 
@@ -418,7 +422,7 @@ function createServer() {
 
 const app = createMcpExpressApp({
   host: HOST,
-  allowedHosts: ["127.0.0.1", "localhost"],
+  allowedHosts: ALLOWED_HOSTS,
 });
 
 app.get("/health", (_req, res) => {

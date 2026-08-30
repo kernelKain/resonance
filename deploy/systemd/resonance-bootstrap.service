@@ -1,0 +1,11 @@
+[Unit]
+Description=Register Resonance agents on TrueForge
+After=resonance-trueforge.service resonance-mcp.service
+Requires=resonance-trueforge.service resonance-mcp.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/resonance
+EnvironmentFile=/opt/resonance/.env
+ExecStart=/usr/bin/node scripts/bootstrap.mjs
+RemainAfterExit=yes
