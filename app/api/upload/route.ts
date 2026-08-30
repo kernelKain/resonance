@@ -3,7 +3,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 
 import { UPLOAD_DIR, UPLOAD_TTL_MS } from "@/lib/config";
-import { parseCsv, requireReviewTextColumn } from "@/lib/csv";
+import { MAX_ANALYZED_REVIEWS, parseCsv, requireReviewTextColumn } from "@/lib/csv";
 import { clientAddress, rateLimitResponse, takeRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     // Explicitly filter out rows where the review text column is entirely empty
     const validRows = nonEmpty.filter((row) => (row[reviewTextCol] ?? "").trim().length > 0);
 
-    // Prefer short reviews, then fill up to 100 from the remaining valid rows.
+    // Prefer short reviews, then fill up to MAX_ANALYZED_REVIEWS from the remaining valid rows.
     const isShort = (row: Record<string, string>) => {
       const reviewText = row[reviewTextCol] ?? "";
       if (reviewText.length > 400) return false;
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
       if (isShort(row)) short.push(row);
       else rest.push(row);
     }
-    const rowsToWrite = [...short, ...rest].slice(0, 100);
+    const rowsToWrite = [...short, ...rest].slice(0, MAX_ANALYZED_REVIEWS);
     const csvToWrite = serialiseCsv(parsed.headers, rowsToWrite);
 
     await mkdir(UPLOAD_DIR, { recursive: true });

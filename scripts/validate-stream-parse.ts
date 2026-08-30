@@ -79,11 +79,11 @@ const stubScored = extractResonanceStream(
 if (stubScored.scored) fail("scored_reviews without reviews[] must not enter stream state");
 
 if (estimateAnalysisMinutes(15) < 1) fail("ETA for 15 reviews must be at least 1 minute");
-if (estimateAnalysisMinutes(100) < estimateAnalysisMinutes(15)) {
-  fail("ETA for 100 reviews must be longer than for 15");
+if (estimateAnalysisMinutes(50) < estimateAnalysisMinutes(15)) {
+  fail("ETA for 50 reviews must be longer than for 15");
 }
-const hundred = statusTextFromStream(stubAnalysis, "running", null, 100);
-if (!hundred.includes("minutes")) fail(`100-review ETA should mention minutes, got: ${hundred}`);
+const fifty = statusTextFromStream(stubAnalysis, "running", null, 50);
+if (!fifty.includes("minutes")) fail(`50-review ETA should mention minutes, got: ${fifty}`);
 
 console.log("PASS");
 console.log(

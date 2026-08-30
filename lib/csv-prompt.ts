@@ -1,3 +1,5 @@
+import { MAX_ANALYZED_REVIEWS } from "@/lib/csv";
+
 export const CSV_GENERATOR_PROMPT = `You are generating a reviews CSV for Resonance, a customer-emotion analysis tool.
 
 Ask me for the product or website URL if I have not already given one. Then research that product (public reviews, Reddit, app-store comments, support threads) and produce a CSV file I can download.
@@ -6,7 +8,7 @@ CSV rules:
 - UTF-8, comma-separated, header row required.
 - Required column: review_text
 - Optional columns: rating (integer 1-5), date (ISO 8601 or YYYY-MM-DD), author
-- Exactly 80-100 rows. Prefer short reviews: 1-2 sentences, at most 400 characters.
+- Exactly ${MAX_ANALYZED_REVIEWS} rows. Prefer short reviews: 1-2 sentences, at most 400 characters.
 - Quote any field that contains commas, quotes, or newlines. Escape quotes as "".
 - Do not wrap the file in a markdown table or a code fence. Offer a real .csv download.
 

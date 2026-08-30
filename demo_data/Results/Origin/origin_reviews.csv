@@ -1,0 +1,51 @@
+review_text,rating,date,author
+Absolutely love reviewing agent PRs without leaving Cursor. Best part of the paid plan this month.,5,2026-08-18,jon.r
+Two-way GitHub sync actually kept comments in both places. I did not expect that from an early beta.,5,2026-08-20,aisha.m
+During the GitHub outage I could still browse our Origin mirror. That alone sold me on trying it.,5,2026-08-17,diego.a
+Origin CLI plus a browser login and then git push just worked. Rare for a beta forge.,5,2026-08-25,hugo.b
+Vercel previews from an Origin-hosted repo felt like the editor and the host finally share a brain.,5,2026-08-26,vera.c
+Cloud agents opening PRs on Origin is the workflow I wanted. Please keep the speed.,5,2026-08-27,ed.t
+I created a repo from an agent in one prompt. Felt like the forge was built for how we actually work now.,5,2026-08-28,chris.p
+Code search at cursor.com/codebase is fast and I keep using it even when GitHub is fine.,5,2026-08-29,nina.k
+Ask Cursor on a selected block with the repo as context is the one native idea GitHub never gave me.,5,2026-08-19,jonah.p
+"Standard git against Origin after the credential helper. No special snowflake protocol. That is joy, not a flex.",5,2026-08-24,elena.d
+"I love it but I probably won't renew. The Codebase tab is genuine, but we still merge on GitHub.",4,2026-08-24,priya.s
+"The product is fine, I guess. GitHub is still the source of truth for every mirrored repo.",4,2026-08-21,maya.k
+"It works. Reviewing in the editor saved me a tab, and I still will not detach a private repo.",4,2026-08-22,nina.v
+Great bones. I wish it did more for people who already live in GitHub Actions.,4,2026-08-22,liam.o
+I keep recommending Cursor even though Origin showed up on by default with no data terms I can show legal.,4,2026-08-20,ravi.n
+I love the PR timeline and I am still pricing staying on GitHub for Issues.,4,2026-08-21,amira.z
+The product is genuinely good and I still will not detach a proprietary repo until they publish retention terms.,4,2026-08-23,harper.j
+"I tell every teammate to try the Codebase tab, then I open settings and feel uneasy about SpaceX holding the bytes.",4,2026-08-19,samir.b
+"Loyal to Cursor, tired of the roadmap saying agent-native features ""ship soon"". That was the whole pitch.",4,2026-08-24,cass.m
+Would be 5 stars if we could rename the codebase namespace. We claimed the wrong slug on day one.,4,2026-08-18,paulo.c
+I still defend Origin in Slack. I wish someone published subprocessors so I could defend it in a security review.,4,2026-08-25,yuki.t
+I do not hate Origin. I just cannot justify moving the source of truth while GitHub remains canonical.,4,2026-08-28,tessa.w
+Bundled into the plan so it costs nothing to try. Renewal is a different conversation if they ever put a line item on it.,4,2026-08-29,anya.f
+I will probably churn at renewal if Origin stays a mirror. The editor is excellent. Those two facts are both true.,4,2026-08-26,reid.s
+"It's not bad. It just works, I guess. PRs in the editor are nice and Issues still live somewhere else.",3,2026-08-22,k.tran
+Fine. Whatever. We mirrored two repos and still run Actions on GitHub.,3,2026-08-23,anon-17
+Fine I guess. Mirror mode is the only posture our counsel will sign.,3,2026-08-26,devon.r
+"Not bad for a week-old beta. Not a GitHub replacement either, and the marketing kind of implied it was.",3,2026-08-18,gina.p
+It works until you need Issues. Then you are back in two tools anyway.,3,2026-08-20,felix.n
+Onboarding was claiming a namespace that any teammate could grab. We spent a day arguing over the slug.,3,2026-08-17,jade.l
+We were on legacy privacy mode and Origin just would not enable. Docs said switch first. Support took three days to confirm.,3,2026-08-19,ivy.s
+Staged rollout meant my Pro account had the Codebase tab and my teammate's did not. Felt like a museum with a locked wing.,3,2026-08-21,marco.u
+Depot and Buildkite are fine I guess. We needed Actions and secrets to come along. They did not.,3,2026-08-22,zoe.a
+"No public repos, so our OSS module stays on GitHub. Origin is a private club and I am not sure we belong.",3,2026-08-23,quentin.y
+Community is hi@cursor.com and a changelog. I wanted a forum thread that was not just launch hype.,3,2026-08-24,sasha.r
+I joined after the June conference demo of agents at 22 commits a second. The beta I got is repos and PRs. Fine. Not that.,3,2026-06-28,blair.i
+Rules and Protections still say they are being redesigned. I do not put production branch policy on a UI that admits that.,3,2026-08-27,kai.m
+"No packages, no releases, no discussions. It hosts git. Calling it a forge for the agentic era is a stretch.",3,2026-08-28,wren.o
+Our intern claimed acme-typo as the codebase name. Docs say you cannot change it during beta. Support said the same.,2,2026-08-18,theo.b
+Tried to install Vercel on a mirrored repo and the API returned 403. Mirror mode is a read-only hobby.,2,2026-08-19,sofia.h
+Merge API rejects mirrors so we review in Origin and merge on GitHub. That is two forges and none of the benefit.,2,2026-08-20,rita.v
+Webhooks are not sent for mirrors. Our bot never saw the PR. I felt abandoned by the integration story.,2,2026-08-21,adrian.l
+Branch protection and Actions secrets did not sync. The safety guarantees stayed on GitHub. What did we even copy?,2,2026-08-22,mei.h
+"No native CI, no merge queue, no stacked diffs. GitHub previewed stacks in July. Origin said ship soon.",2,2026-08-23,owen.c
+"Opt-out for enterprises, default-on for everyone else. Nobody asked our Pro team if we wanted a code host from a SpaceX subsidiary.",2,2026-08-17,tom.k
+Emailed hi@cursor.com about data residency and got a docs link that stops at privacy mode inheritance. Not an answer.,2,2026-08-24,colin.d
+Windows teammate still needs WSL for the CLI happy path. Half the company felt like an afterthought.,2,2026-08-26,petra.j
+"They turned on a git host three days after the SpaceX close and published no Origin retention or training-use terms. That is not early beta, that is a failed control.",1,2026-08-18,helen.q
+Enabled on our paid plan without a click. Legal found a repo someone pushed on Friday. We disabled Origin from the dashboard and I still do not feel safe.,1,2026-08-19,irene.f
+"Asked for subprocessors, deletion, and export. Still unpublished. I will not put customer fixtures on a host I cannot attest to.",1,2026-08-21,leah.w

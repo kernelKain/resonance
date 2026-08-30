@@ -12,6 +12,8 @@ const ALLOWED_DIRS = ALLOWED_DIR_NAMES.map((dir) => path.join(ROOT, dir));
 const ANALYSIS_DIR = path.join(ROOT, "analysis");
 const HOST = process.env.MCP_HOST ?? "127.0.0.1";
 const PORT = Number(process.env.MCP_PORT ?? 8792);
+/** Keep in sync with MAX_ANALYZED_REVIEWS in lib/csv.ts */
+const MAX_ANALYZED_REVIEWS = 50;
 
 function parseCsv(text) {
   const records = [];
@@ -264,7 +266,7 @@ function createServer() {
     {
       title: "Read reviews CSV",
       description:
-        "Parse a customer-reviews CSV and return its rows. Accepts either a basename such as sample_reviews.csv or an allowed relative path such as demo_data/sample_reviews.csv.",
+        `Parse a customer-reviews CSV and return its rows. Accepts either a basename such as sample_reviews.csv or an allowed relative path such as demo_data/sample_reviews.csv. Returns at most ${MAX_ANALYZED_REVIEWS} review rows.`,
       inputSchema: {
         filename: z
           .string()
@@ -276,9 +278,11 @@ function createServer() {
           .number()
           .int()
           .positive()
-          .max(500)
+          .max(MAX_ANALYZED_REVIEWS)
           .optional()
-          .describe("Optional maximum number of review rows to return."),
+          .describe(
+            `Optional maximum number of review rows to return (capped at ${MAX_ANALYZED_REVIEWS}).`,
+          ),
       },
       annotations: readOnly,
     },
@@ -296,7 +300,8 @@ function createServer() {
         throw new Error("CSV is missing a review_text column.");
       }
 
-      const rows = limit ? parsed.rows.slice(0, limit) : parsed.rows;
+      const cap = Math.min(limit ?? MAX_ANALYZED_REVIEWS, MAX_ANALYZED_REVIEWS);
+      const rows = parsed.rows.slice(0, cap);
 
       return {
         content: [

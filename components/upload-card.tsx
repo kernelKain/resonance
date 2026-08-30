@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import type { ResonancePhase } from "@/lib/resonance-parse";
 import type { ProductIdentity } from "@/lib/product-identity";
 import { asProductUrl, brandNameFrom } from "@/lib/product-identity";
-import { isCsvUploadCandidate, validateCsvUploadText } from "@/lib/csv";
+import { isCsvUploadCandidate, MAX_ANALYZED_REVIEWS, validateCsvUploadText } from "@/lib/csv";
 import { copyCsvGeneratorPrompt } from "@/lib/csv-prompt";
 
 const MAX_CSV_BYTES = 5 * 1024 * 1024;
@@ -179,7 +179,7 @@ export function UploadCard({
             </p>
           ) : null}
           <p id="csv-requirements" className="mt-3 text-xs text-muted-foreground">
-            Maximum 5 MB. Up to 100 concise reviews are analyzed per run.
+            Maximum 5 MB. Up to {MAX_ANALYZED_REVIEWS} concise reviews are analyzed per run.
           </p>
           {fileError ? (
             <p role="alert" className="mt-3 text-sm text-destructive">{fileError}</p>
@@ -217,10 +217,12 @@ export function UploadCard({
           }}
         >
           {promptCopied ? <CheckCircle2 className="size-4" /> : <ClipboardCopy className="size-4" />}
-          {promptCopied ? "Copied — paste into ChatGPT" : "Copy CSV generator prompt"}
+          {promptCopied
+            ? "Copied — paste into ChatGPT"
+            : `Copy CSV generator prompt to generate only ${MAX_ANALYZED_REVIEWS} reviews`}
         </Button>
         <p className="text-xs leading-5 text-muted-foreground">
-          No reviews yet? Copy the prompt, paste it into ChatGPT with any product URL, then upload the CSV it generates.
+          No reviews yet? Copy the prompt, paste it into ChatGPT with any product URL, then upload the {MAX_ANALYZED_REVIEWS}-review CSV it generates.
         </p>
 
         {devMode && (

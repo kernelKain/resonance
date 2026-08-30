@@ -175,6 +175,7 @@ review_text,rating,date,author
 - `rating` — optional integer 1–5
 - `date` — optional ISO date
 - `author` — optional display name
+- Uploads are capped at **50 concise reviews** per run (short rows preferred). Extra rows are dropped.
 
 A sample dataset ships at `public/demo/hero_reviews.csv`. Click **Load sample** on the upload card to try it without your own data.
 

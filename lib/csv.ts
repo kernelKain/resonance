@@ -1,3 +1,6 @@
+/** Maximum review rows scored in a single Resonance run. */
+export const MAX_ANALYZED_REVIEWS = 50;
+
 /**
  * A parsed CSV table with typed headers and row objects.
  */
