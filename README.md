@@ -3,18 +3,25 @@
 > **Customer emotion archaeology powered by Plutchik's Wheel**
 
 [![CI](https://github.com/kernelKain/resonance/actions/workflows/ci.yml/badge.svg)](https://github.com/kernelKain/resonance/actions/workflows/ci.yml)
+[![Live demo](https://img.shields.io/badge/live_demo-trycloudflare-00C7B7)](https://graphics-newsletters-usr-simplified.trycloudflare.com)
 [![License: MIT](https://img.shields.io/badge/license-MIT-cyan.svg)](LICENSE)
 
 Resonance does not classify reviews as positive, negative, or neutral. It scores each review on Plutchik's eight emotions, flags cognitive dissonance, maps an unmet Maslow need, clusters the emotion vectors in a TrueForge sandbox, names psychological archetypes, writes Hidden Asks — then **pauses for a human** before any product-roadmap recommendation is emitted.
 
 Built for [The Agent Harness Hackathon](https://wemakedevs.org/) on the TrueForge harness (filesystem MCP, Exa web search, Daytona sandbox, `ask_user_question`).
 
+**Live demo:** [https://graphics-newsletters-usr-simplified.trycloudflare.com](https://graphics-newsletters-usr-simplified.trycloudflare.com)
+
+Always-on Oracle Always Free ARM VM in Mumbai. Nothing runs on a laptop. The URL is a Cloudflare Quick Tunnel (`*.trycloudflare.com`); it can change if that tunnel process restarts.
+
 ---
 
 ## Screenshots
 
+Zomato demo run (Plutchik profile → HITL approval → roadmap).
+
 <p align="center">
-  <img src="demo_data/Results/Linear/emotion-profile.png" alt="Linear analysis — Plutchik emotion profile and customer segments" />
+  <img src="demo_data/Results/Zomato/live-analysis.png" alt="Zomato — live analysis workbench" />
 </p>
 
 <p align="center">
@@ -43,19 +50,15 @@ Built for [The Agent Harness Hackathon](https://wemakedevs.org/) on the TrueForg
 
 Upload a CSV → watch the Plutchik wheel fill in real time → approve the analysis → export a dark-theme PDF.
 
-More captures, input CSVs, and PDFs: [`demo_data/Results/`](demo_data/Results/).
-
 ---
 
-## Sample analyses
+## Sample analysis
 
 | Product | Dataset | Report |
 | --- | --- | --- |
-| Linear | [`hero_reviews.csv`](demo_data/Results/Linear/hero_reviews.csv) | [PDF](demo_data/Results/Linear/linear-resonance-report.pdf) |
 | Zomato | [`zomato_reviews.csv`](demo_data/Results/Zomato/zomato_reviews.csv) | [PDF](demo_data/Results/Zomato/zomato-resonance-report.pdf) |
-| Cursor Origin | [`origin_reviews.csv`](demo_data/Results/Cursor/origin_reviews.csv) | [PDF](demo_data/Results/Cursor/cursor-resonance-report.pdf) |
 
-Click **Load demo dataset** in the UI to run the Linear sample without preparing a file.
+In the live UI, click **Load demo dataset** to run a bundled sample without preparing a file.
 
 ---
 
@@ -140,15 +143,36 @@ TrueForge :8790  Agent "resonance"  (OpenRouter model, HITL, subagents)
 
 ## Deploy (VM, nothing local)
 
-Oracle Always Free ARM VM + Docker Compose + Cloudflare Tunnel. TrueForge and the filesystem MCP stay on loopback; only the UI is published.
+**Live:** [https://graphics-newsletters-usr-simplified.trycloudflare.com](https://graphics-newsletters-usr-simplified.trycloudflare.com)
+
+Oracle Always Free ARM VM + Docker Compose. TrueForge (`:8790`) and the filesystem MCP (`:8792`) stay on the Docker network / loopback. The UI is bound to `127.0.0.1:43123` on the VM. Public HTTPS is a **Cloudflare Quick Tunnel** (no purchased domain). Do not open ports 80, 443, 43123, 8790, or 8792 on the VCN — SSH **22** only.
+
+| Field | Value |
+| --- | --- |
+| Instance | `resonance-instance` · Ubuntu 24.04 Minimal **aarch64** · `VM.Standard.A1.Flex` **2 OCPU / 12 GB** |
+| Region | Mumbai (`ap-mumbai-1`) |
+| Public IP | `80.225.244.5` (SSH only) |
+| SSH | `ssh -i ~/.ssh/id_ed25519 ubuntu@80.225.244.5` |
+| VCN / subnet | `resonance-vcn` / `resonance-public` (`10.0.0.0/24`) |
+| App on VM | `http://127.0.0.1:43123` |
+| Laptop preview | `ssh -i ~/.ssh/id_ed25519 -L 43123:127.0.0.1:43123 ubuntu@80.225.244.5` then http://127.0.0.1:43123 |
 
 Copy-paste runbook, Compose file, and systemd units: **[`deploy/README.md`](deploy/README.md)**.
 
 ```bash
+ssh -i ~/.ssh/id_ed25519 ubuntu@80.225.244.5
 curl -fsSL https://raw.githubusercontent.com/kernelKain/resonance/main/deploy/install-vm.sh | sudo bash
 sudo nano /opt/resonance/.env    # OPENROUTER_API_KEY, DAYTONA_API_KEY
 sudo systemctl start resonance-compose
 ```
+
+`systemctl start resonance-compose` is silent until the first ARM image build finishes (several minutes). Health check from the VM:
+
+```bash
+curl -sS http://127.0.0.1:43123/api/health
+```
+
+TrueForge in Compose must set `HOST=0.0.0.0` so it is reachable on IPv4 inside Docker (standalone defaults to localhost / IPv6). Next.js 16 has no `request.ip`; rate limits use `x-forwarded-for` / `x-real-ip`.
 
 ---
 
@@ -214,6 +238,8 @@ npm run bootstrap
 
 ## Usage
 
+Open the [live demo](https://graphics-newsletters-usr-simplified.trycloudflare.com) (or local http://localhost:43123).
+
 1. **Enter a product name or URL** in the upload card — this gives the Exa subagent context.
 2. **Upload a CSV** with at least a `review_text` column (UTF-8, any line endings), or click **Load demo dataset**.
 3. Watch the **Live Analysis** stepper — each stage shows a contextual hint explaining what the AI is doing.
@@ -276,7 +302,7 @@ resonance/
 ├── schemas/                # JSON contracts for each resonance-data fence
 ├── scripts/
 │   └── cluster.py          # k-means clustering (runs in Daytona sandbox)
-├── demo_data/Results/      # Linear, Zomato, Cursor demo CSVs, screenshots, PDFs
+├── demo_data/Results/      # Zomato demo CSV, screenshots, PDF (plus extra sample CSVs)
 ├── public/demo/            # Sample CSVs and stream fixtures for the UI
 ├── deploy/                 # Oracle VM runbook, systemd units, install script
 ├── docker-compose.yml      # UI + MCP + TrueForge (+ optional Cloudflare Tunnel)

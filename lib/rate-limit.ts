@@ -1,5 +1,3 @@
-import type { NextRequest } from "next/server";
-
 type Bucket = { count: number; resetAt: number };
 
 declare global {
@@ -10,7 +8,10 @@ declare global {
 const buckets = globalThis.resonanceRateLimits ??= new Map<string, Bucket>();
 
 export function clientAddress(request: Request): string {
-  return (request as NextRequest).ip ?? "local";
+  const forwarded = request.headers.get("x-forwarded-for");
+  const first = forwarded?.split(",")[0]?.trim();
+  if (first) return first;
+  return request.headers.get("x-real-ip")?.trim() || "local";
 }
 
 export function takeRateLimit(
