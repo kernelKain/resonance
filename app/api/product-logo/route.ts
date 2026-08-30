@@ -1,3 +1,4 @@
+import { isPrivateAddress } from "@/lib/address";
 import { lookup } from "node:dns/promises";
 import net from "node:net";
 
@@ -9,32 +10,16 @@ export const runtime = "nodejs";
 
 const MAX_LOGO_BYTES = 1024 * 1024;
 
-function isPrivate(address: string) {
-  if (net.isIPv4(address)) {
-    const [a, b] = address.split(".").map(Number);
-    return (
-      a === 0 ||
-      a === 10 ||
-      a === 127 ||
-      (a === 169 && b === 254) ||
-      (a === 172 && b >= 16 && b <= 31) ||
-      (a === 192 && b === 168) ||
-      a >= 224
-    );
-  }
-  const value = address.toLowerCase();
-  return value === "::" || value === "::1" || value.startsWith("fc") ||
-    value.startsWith("fd") || /^fe[89ab]/.test(value);
-}
 
-async function assertPublic(url: URL) {
+async function assertPublic(url: URL): Promise<string> {
   if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) {
     throw new Error("Unsupported logo URL.");
   }
   const addresses = await lookup(url.hostname, { all: true, verbatim: true });
-  if (!addresses.length || addresses.some(({ address }) => isPrivate(address))) {
+  if (!addresses.length || addresses.some(({ address }) => isPrivateAddress(address))) {
     throw new Error("Private logo URL.");
   }
+  return addresses[0].address;
 }
 
 export async function GET(request: Request) {
@@ -44,11 +29,13 @@ export async function GET(request: Request) {
     let current = requested;
     let response: Response | null = null;
     for (let redirects = 0; redirects <= 3; redirects += 1) {
-      await assertPublic(current);
-      response = await fetch(current, {
+      const ip = await assertPublic(current);
+      const fetchUrl = new URL(current.toString());
+      fetchUrl.hostname = ip;
+      response = await fetch(fetchUrl, {
         redirect: "manual",
         signal: AbortSignal.timeout(5_000),
-        headers: { accept: "image/*", "user-agent": "ResonanceLogo/1.0" },
+        headers: { host: current.host, accept: "image/*", "user-agent": "ResonanceLogo/1.0" },
       });
       if (response.status >= 300 && response.status < 400) {
         const location = response.headers.get("location");

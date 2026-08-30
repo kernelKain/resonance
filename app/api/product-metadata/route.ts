@@ -1,3 +1,4 @@
+import { isPrivateAddress } from "@/lib/address";
 import { lookup } from "node:dns/promises";
 import net from "node:net";
 
@@ -12,37 +13,8 @@ const MAX_REDIRECTS = 3;
 const MAX_HTML_BYTES = 512 * 1024;
 const FETCH_TIMEOUT_MS = 6_000;
 
-function isPrivateAddress(address: string): boolean {
-  if (net.isIPv4(address)) {
-    const [a, b] = address.split(".").map(Number);
-    return (
-      a === 10 ||
-      a === 127 ||
-      a === 0 ||
-      (a === 169 && b === 254) ||
-      (a === 172 && b >= 16 && b <= 31) ||
-      (a === 192 && b === 168) ||
-      (a === 100 && b >= 64 && b <= 127) ||
-      a >= 224
-    );
-  }
-  const normalized = address.toLowerCase();
-  return (
-    normalized === "::1" ||
-    normalized === "::" ||
-    normalized.startsWith("fc") ||
-    normalized.startsWith("fd") ||
-    normalized.startsWith("fe8") ||
-    normalized.startsWith("fe9") ||
-    normalized.startsWith("fea") ||
-    normalized.startsWith("feb") ||
-    normalized.startsWith("::ffff:127.") ||
-    normalized.startsWith("::ffff:10.") ||
-    normalized.startsWith("::ffff:192.168.")
-  );
-}
 
-async function assertPublicUrl(url: URL) {
+async function assertPublicUrl(url: URL): Promise<string> {
   if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) {
     throw new Error("Only public HTTP or HTTPS URLs are supported.");
   }
@@ -50,16 +22,20 @@ async function assertPublicUrl(url: URL) {
   if (!addresses.length || addresses.some(({ address }) => isPrivateAddress(address))) {
     throw new Error("Private or local network addresses are not supported.");
   }
+  return addresses[0].address;
 }
 
 async function fetchPublicPage(initialUrl: URL): Promise<{ response: Response; url: URL }> {
   let current = initialUrl;
   for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect += 1) {
-    await assertPublicUrl(current);
-    const response = await fetch(current, {
+    const ip = await assertPublicUrl(current);
+    const fetchUrl = new URL(current.toString());
+    fetchUrl.hostname = ip;
+    const response = await fetch(fetchUrl, {
       redirect: "manual",
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       headers: {
+        host: current.host,
         accept: "text/html,application/xhtml+xml",
         "user-agent": "ResonanceMetadata/1.0",
       },
