@@ -26,6 +26,11 @@ import {
   type TurnIngest,
 } from "@/lib/trueforge-events";
 import { readSse } from "@/hooks/use-sse-stream";
+import {
+  asProductUrl,
+  hostnameLabel,
+  type ProductIdentity,
+} from "@/lib/product-identity";
 
 /**
  * A single item in the live transcript shown in the sidebar and activity log.
@@ -43,13 +48,8 @@ export type TranscriptItem = {
 const HITL_PAUSE_MARKER = "<!-- HITL_PAUSE -->";
 
 export function cleanProductName(input: string): string {
-  try {
-    const isUrl = input.includes("://") || /^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(input.trim());
-    if (isUrl) {
-      const url = new URL(input.trim().includes("://") ? input.trim() : `https://${input.trim()}`);
-      if (url.hostname) return url.hostname.replace(/^www\./i, "");
-    }
-  } catch {}
+  const url = asProductUrl(input);
+  if (url) return hostnameLabel(url);
   return input.trim();
 }
 
@@ -58,8 +58,9 @@ export function cleanProductName(input: string): string {
  * Encodes all necessary parameters (product, file path, row count) inline so
  * the agent can start immediately without additional clarification.
  */
-function excavationPrompt(productName: string, basename: string, rowCount: number) {
-  return `Follow the Emotion Archaeology protocol for product "${productName}". CSV file is ${basename} (${rowCount} reviews). Read it with the filesystem MCP (basename only — never a demo_data/ prefix). Spawn a subagent to research the product with Exa. Score every row. Emit compact JSON (no pretty-print) in every resonance-data fence. Persist scored_reviews.json. Copy scripts/cluster.py into the TrueForge sandbox and run cluster.py there. Emit cluster_results VERBATIM from cluster.py. Then name one archetype per cluster and write 3–5 Hidden Asks with action_items null. Emit analysis_result with scored_reviews [] and cluster_results {}. Then emit approval_request and call ask_user_question with options Approved and Decline. Do not emit action_items until the user answers Approved.`;
+function excavationPrompt(product: ProductIdentity, basename: string, rowCount: number) {
+  const source = product.sourceUrl ? ` Product URL: ${product.sourceUrl}.` : "";
+  return `Follow the Emotion Archaeology protocol for product "${product.name}".${source} CSV file is ${basename} (${rowCount} reviews). Read it with the filesystem MCP (basename only — never a demo_data/ prefix). Spawn a subagent to research the product with Exa. Score every row. Emit compact JSON (no pretty-print) in every resonance-data fence. Persist scored_reviews.json. Copy scripts/cluster.py into the TrueForge sandbox and run cluster.py there. Emit cluster_results VERBATIM from cluster.py. Then name one archetype per cluster and write 3–5 Hidden Asks with action_items null. Emit analysis_result with scored_reviews [] and cluster_results {}. Then emit approval_request and call ask_user_question with options Approved and Decline. Do not emit action_items until the user answers Approved.`;
 }
 
 /**
@@ -138,6 +139,7 @@ function sleep(ms: number) {
  */
 export function useResonanceState() {
   const [productName, setProductName] = useState("");
+  const [productIdentity, setProductIdentity] = useState<ProductIdentity | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [phase, setPhase] = useState<ResonancePhase>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -173,8 +175,10 @@ export function useResonanceState() {
           phase?: ResonancePhase;
           assistant?: string;
           uploadMeta?: { filePath: string; rowCount: number; filteredRowCount?: number } | null;
+          productIdentity?: ProductIdentity | null;
         };
         if (saved.productName) setProductName(saved.productName);
+        if (saved.productIdentity) setProductIdentity(saved.productIdentity);
         if (saved.uploadMeta) setUploadMeta(saved.uploadMeta);
         if (saved.assistant && saved.phase && saved.phase !== "idle") {
           assistantRef.current = saved.assistant;
@@ -203,7 +207,13 @@ export function useResonanceState() {
     try {
       sessionStorage.setItem(
         "resonance_session",
-        JSON.stringify({ productName: name, phase: currentPhase, assistant: assistantText, uploadMeta: meta }),
+        JSON.stringify({
+          productName: name,
+          productIdentity,
+          phase: currentPhase,
+          assistant: assistantText,
+          uploadMeta: meta,
+        }),
       );
     } catch {
       // Storage quota exceeded or unavailable — fail silently
@@ -245,6 +255,7 @@ export function useResonanceState() {
     resetStream();
     setFile(null);
     setProductName("");
+    setProductIdentity(null);
     setUploadMeta(null);
     setError(null);
     setPhase("idle");
@@ -261,6 +272,23 @@ export function useResonanceState() {
     });
   }
 
+  async function resolveProductIdentity(input: string): Promise<ProductIdentity> {
+    const url = asProductUrl(input);
+    if (!url) return { name: input.trim() };
+    try {
+      const response = await fetch("/api/product-metadata", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ url: url.toString() }),
+      });
+      const payload = (await response.json()) as ProductIdentity & { error?: string };
+      if (response.ok && payload.name) return payload;
+    } catch {
+      // Metadata improves display but must not block an analysis.
+    }
+    return { name: hostnameLabel(url), sourceUrl: url.toString() };
+  }
+
   async function loadSample() {
     try {
       const response = await fetch("/demo/hero_reviews.csv", { cache: "no-store" });
@@ -268,6 +296,7 @@ export function useResonanceState() {
       const blob = await response.blob();
       setFile(new File([blob], "hero_reviews.csv", { type: "text/csv" }));
       setProductName("Linear");
+      setProductIdentity({ name: "Linear", sourceUrl: "https://linear.app" });
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "Could not load demo dataset.";
       setError(message);
@@ -279,6 +308,7 @@ export function useResonanceState() {
     const blob = await response.blob();
     setFile(new File([blob], "scoring_fixture.csv", { type: "text/csv" }));
     setProductName("Linear");
+    setProductIdentity({ name: "Linear", sourceUrl: "https://linear.app" });
   }
 
   async function replayFixture() {
@@ -463,9 +493,14 @@ export function useResonanceState() {
       const nextSessionId = await openSession();
       const basename =
         uploadJson.filename ?? uploadJson.filePath.split("/").pop() ?? file.name;
-      const cleanName = cleanProductName(productName);
-      setProductName(cleanName);
-      const message = excavationPrompt(cleanName || basename, basename, effectiveRowCount);
+      const identity = await resolveProductIdentity(productName);
+      const resolvedIdentity = {
+        ...identity,
+        name: identity.name || cleanProductName(productName) || basename,
+      };
+      setProductIdentity(resolvedIdentity);
+      setProductName(resolvedIdentity.name);
+      const message = excavationPrompt(resolvedIdentity, basename, effectiveRowCount);
 
       setTranscript([
         {
@@ -565,6 +600,7 @@ export function useResonanceState() {
   return {
     productName,
     setProductName,
+    productIdentity,
     file,
     setFile,
     phase,

@@ -45,6 +45,7 @@ export function ResonanceApp() {
   const {
     productName,
     setProductName,
+    productIdentity,
     file,
     setFile,
     phase,
@@ -202,20 +203,28 @@ export function ResonanceApp() {
             >
             <div className="space-y-5">
               <div className="flex flex-wrap items-end justify-between gap-4">
-                <div className="min-w-0">
+                <div className="flex min-w-0 items-center gap-3">
+                  {productIdentity?.logoUrl ? (
+                    // Product favicons are discovered from user-supplied public URLs.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={productIdentity.logoUrl}
+                      alt=""
+                      className="size-11 shrink-0 rounded-xl border border-border bg-card object-contain p-1.5"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : null}
+                  <div className="min-w-0">
                   <p className="font-mono text-[11px] tracking-[0.24em] text-cyan-300 uppercase">
                     Live Analysis
                   </p>
                   <h2 className="heading-gradient mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-                    {(() => {
-                      const t = productName.trim();
-                      try { const u = new URL(t); return u.hostname.replace(/^www\./, ""); }
-                      catch { return t || "Analysis"; }
-                    })()}
+                    {productIdentity?.name || productName.trim() || "Analysis"}
                   </h2>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground" aria-live="polite">
                     {statusLine}
                   </p>
+                  </div>
                 </div>
                 <Button
                   variant="outline"
@@ -288,7 +297,10 @@ export function ResonanceApp() {
                 transcript={transcript}
               />
               {phase === "done" ? (
-                <ResultsSummary stream={stream} productName={productName} />
+                <ResultsSummary
+                  stream={stream}
+                  productName={productIdentity?.name || productName}
+                />
               ) : null}
             </div>
             </motion.div>
