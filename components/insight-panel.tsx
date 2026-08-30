@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Quote, Sparkles, Users, Waypoints } from "lucide-react";
+import { AlertTriangle, Quote } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,6 @@ import {
 import { EMOTION_COLORS, EMOTION_LABELS } from "@/lib/plutchik";
 import type { ResonanceStreamState } from "@/lib/resonance-parse";
 import type { HiddenAsk, MaslowNeed } from "@/lib/resonance-types";
-import { InfoTooltip } from "@/components/info-tooltip";
 
 function MaslowBadge({ need }: { need: MaslowNeed }) {
   return (
@@ -184,6 +183,9 @@ function ActionItemCard({
   );
 }
 
+const tabTriggerClassName =
+  "group relative flex flex-1 items-center justify-center whitespace-nowrap rounded-none px-3 py-2.5 text-xs sm:text-sm after:hidden";
+
 export function InsightPanel({ stream }: { stream: ResonanceStreamState }) {
   const archetypes = archetypesWithCentroids(stream);
   const asks = hiddenAskCards(stream);
@@ -203,28 +205,17 @@ export function InsightPanel({ stream }: { stream: ResonanceStreamState }) {
         <Tabs defaultValue="archetypes" className="w-full">
           <div className="border-b border-border/40">
             <TabsList variant="line" className="grid h-auto w-full grid-cols-2 divide-x divide-border/30 overflow-x-auto rounded-none border border-b-0 border-border/30 bg-transparent lg:grid-cols-4">
-              <TabsTrigger value="archetypes" className="group relative flex items-center gap-1.5 whitespace-nowrap rounded-none px-3 py-2.5 text-xs sm:text-sm after:hidden">
-                <Users className="size-3.5 shrink-0" />
-                <span>Segments ({archetypes.length})</span>
-                <span className="hidden md:inline-flex"><InfoTooltip content="Distinct behavioral profiles identified by clustering emotional signatures and phrasing patterns across reviews." /></span>
-                <motion.div layoutId="activeTabIndicator" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-active:block" />
+              <TabsTrigger value="archetypes" className={tabTriggerClassName}>
+                Segments ({archetypes.length})
               </TabsTrigger>
-              <TabsTrigger value="asks" className="group relative flex items-center gap-1.5 whitespace-nowrap rounded-none px-3 py-2.5 text-xs sm:text-sm after:hidden">
-                <Sparkles className="size-3.5 shrink-0" />
-                <span>Unspoken Needs ({asks.length})</span>
-                <span className="hidden md:inline-flex"><InfoTooltip content="Latent desires that users express through emotional subtext rather than direct feature requests." /></span>
-                <motion.div layoutId="activeTabIndicator" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-active:block" />
+              <TabsTrigger value="asks" className={tabTriggerClassName}>
+                Unspoken Needs ({asks.length})
               </TabsTrigger>
-              <TabsTrigger value="dissonance" className="group relative flex items-center gap-1.5 whitespace-nowrap rounded-none px-3 py-2.5 text-xs sm:text-sm after:hidden">
-                <AlertTriangle className="size-3.5 shrink-0" />
-                <span>Red Flags ({alerts.length})</span>
-                <span className="hidden md:inline-flex"><InfoTooltip content="Cognitive dissonance detected when a user's literal words contradict their underlying emotional state." /></span>
-                <motion.div layoutId="activeTabIndicator" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-active:block" />
+              <TabsTrigger value="dissonance" className={tabTriggerClassName}>
+                Red Flags ({alerts.length})
               </TabsTrigger>
-              <TabsTrigger value="actions" className="group relative flex items-center gap-1.5 whitespace-nowrap rounded-none px-3 py-2.5 text-xs sm:text-sm after:hidden">
-                <Waypoints className="size-3.5 shrink-0" />
-                <span>Recommendations ({actions.length})</span>
-                <motion.div layoutId="activeTabIndicator" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-active:block" />
+              <TabsTrigger value="actions" className={tabTriggerClassName}>
+                Recommendations ({actions.length})
               </TabsTrigger>
             </TabsList>
           </div>
