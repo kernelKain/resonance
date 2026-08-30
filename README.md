@@ -124,7 +124,7 @@ A Hidden Ask is the need the pattern implies that **no review filed as a ticket*
 
 ---
 
-## Tech stack
+## Architecture and tech stack
 
 Three processes. Do not collapse them — the UI never calls the model, the agent never clusters on the laptop, and clustering never invents archetypes.
 
@@ -337,6 +337,22 @@ npm run lint
 npm run typecheck
 npm test
 ```
+
+---
+
+## AI disclosure
+
+AI coding assistants were used on this project. That is allowed for the hackathon; this section is the required disclosure.
+
+**Coding assistant.** [Cursor](https://cursor.com) (agent mode) helped write, refactor, and debug application code, tests, Docker/systemd deploy files, and this README. Suggestions were reviewed before they landed. Nothing was merged unread.
+
+**What stayed human.** The product thesis (emotion archaeology, not sentiment), the scoring protocol (Plutchik, cognitive dissonance, Maslow), the rule that roadmap text waits for a human, the three-process architecture, and which TrueForge capabilities do which job. The author can walk a judge through the agent loop, the fences, the sandbox clustering, and the HITL gate.
+
+**What the assistant sped up.** Boilerplate, UI iteration, stream-parser edge cases, ARM Compose health, PDF layout, and copy. Tests and a local or VM run were used to check the generated bits.
+
+**Runtime models are not the coding assistant.** MiniMax M3 and DeepSeek V4 Flash (via OpenRouter, inside TrueForge) score reviews and name archetypes at demo time. They are the agent. Cursor is how the repo was built.
+
+Projects that are entirely generated with no understanding would fail these rules. This one is not that: the architecture and the “why this stack” table above are the decisions, not a prompt dump.
 
 ---
 
