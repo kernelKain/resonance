@@ -2,6 +2,7 @@ export type ProductIdentity = {
   name: string;
   sourceUrl?: string;
   logoUrl?: string;
+  fromPage?: boolean;
 };
 
 export function asProductUrl(input: string): URL | null {
@@ -26,4 +27,13 @@ export function hostnameLabel(url: URL): string {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+/** Never show a pasted URL as the on-screen product title. */
+export function brandNameFrom(identity: ProductIdentity | null, fallback: string): string {
+  const raw = (identity?.name || fallback).trim();
+  if (!raw) return "Analysis";
+  const url = asProductUrl(raw);
+  if (url) return hostnameLabel(url);
+  return raw;
 }

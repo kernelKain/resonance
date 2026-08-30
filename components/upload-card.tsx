@@ -13,12 +13,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { ResonancePhase } from "@/lib/resonance-parse";
+import type { ProductIdentity } from "@/lib/product-identity";
+import { asProductUrl, brandNameFrom } from "@/lib/product-identity";
 
 const MAX_CSV_BYTES = 5 * 1024 * 1024;
 
 type UploadCardProps = {
   productName: string;
   setProductName: (name: string) => void;
+  productIdentity: ProductIdentity | null;
   file: File | null;
   setFile: (file: File | null) => void;
   phase: ResonancePhase;
@@ -37,6 +40,7 @@ type UploadCardProps = {
 export function UploadCard({
   productName,
   setProductName,
+  productIdentity,
   file,
   setFile,
   phase,
@@ -101,6 +105,15 @@ export function UploadCard({
           <p className="text-xs leading-5 text-muted-foreground">
             Enter the product name or paste its public link — helps the AI interpret reviews in the right context.
           </p>
+          {asProductUrl(productName) && productIdentity?.name ? (
+            <p className="text-xs leading-5 text-muted-foreground">
+              Analyzing as{" "}
+              <span className="font-semibold text-orange-300">
+                {brandNameFrom(productIdentity, productName)}
+              </span>
+              {productIdentity.fromPage ? "" : " — fetching brand name…"}
+            </p>
+          ) : null}
         </div>
 
         <motion.label
@@ -166,7 +179,7 @@ export function UploadCard({
           <Button
             size="lg"
             className="flex-1"
-            disabled={!canRun || phase === "uploading"}
+            disabled={!canRun || !harnessReady || phase === "uploading"}
             onClick={onRunExcavation}
           >
             {phase === "uploading" ? (
@@ -213,11 +226,13 @@ export function UploadCard({
           </details>
         )}
 
-        {devMode && !harnessReady ? (
+        {!harnessReady ? (
           <p className="rounded-lg border border-amber-400/25 bg-amber-400/8 px-3.5 py-3 text-xs leading-5 text-amber-100">
-            Analysis engine is not connected. Fixture replays still work. To run live
-            analysis, ensure all services are running and execute{" "}
-            <code className="font-mono text-cyan-200">npm run bootstrap</code>.
+            Analysis engine is not connected. In a second terminal run{" "}
+            <code className="font-mono text-cyan-200">npm run harness</code>
+            {devMode ? ", then " : " and "}
+            <code className="font-mono text-cyan-200">npm run bootstrap</code>
+            {devMode ? ". Fixture replays still work." : "."}
           </p>
         ) : null}
 

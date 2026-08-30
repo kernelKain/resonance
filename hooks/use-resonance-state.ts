@@ -29,6 +29,7 @@ import { readSse } from "@/hooks/use-sse-stream";
 import { isRetryableModelFailure } from "@/lib/model-router";
 import {
   asProductUrl,
+  brandNameFrom,
   hostnameLabel,
   type ProductIdentity,
 } from "@/lib/product-identity";
@@ -380,6 +381,48 @@ export function useResonanceState() {
     sessionId,
     uploadMeta,
   ]);
+
+  useEffect(() => {
+    const url = asProductUrl(productName);
+    const name = productName.trim();
+
+    if (!url) {
+      setProductIdentity((current) => {
+        if (!name) return null;
+        if (current?.name === name) return current;
+        return { name };
+      });
+      return;
+    }
+
+    const fallback: ProductIdentity = {
+      name: hostnameLabel(url),
+      sourceUrl: url.toString(),
+      fromPage: false,
+    };
+    setProductIdentity((current) => {
+      if (current?.sourceUrl === fallback.sourceUrl) return current;
+      return fallback;
+    });
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void resolveProductIdentity(productName).then((identity) => {
+        if (cancelled) return;
+        setProductIdentity((current) => {
+          if (asProductUrl(productName)?.toString() !== url.toString()) return current;
+          return identity;
+        });
+      });
+    }, 400);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+    // resolveProductIdentity is stable for this effect's purpose.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productName]);
   // ─────────────────────────────────────────────────────────────────────────────
 
   function cancelFlush() {
@@ -442,6 +485,11 @@ export function useResonanceState() {
   async function resolveProductIdentity(input: string): Promise<ProductIdentity> {
     const url = asProductUrl(input);
     if (!url) return { name: input.trim() };
+    const fallback: ProductIdentity = {
+      name: hostnameLabel(url),
+      sourceUrl: url.toString(),
+      fromPage: false,
+    };
     try {
       const response = await fetch("/api/product-metadata", {
         method: "POST",
@@ -449,11 +497,19 @@ export function useResonanceState() {
         body: JSON.stringify({ url: url.toString() }),
       });
       const payload = (await response.json()) as ProductIdentity & { error?: string };
-      if (response.ok && payload.name) return payload;
+      if (response.ok && payload.name) {
+        const name = asProductUrl(payload.name) ? fallback.name : payload.name;
+        return {
+          ...payload,
+          name,
+          sourceUrl: payload.sourceUrl ?? url.toString(),
+          fromPage: true,
+        };
+      }
     } catch {
       // Metadata improves display but must not block an analysis.
     }
-    return { name: hostnameLabel(url), sourceUrl: url.toString() };
+    return fallback;
   }
 
   async function loadSample() {
@@ -463,7 +519,7 @@ export function useResonanceState() {
       const blob = await response.blob();
       setFile(new File([blob], "hero_reviews.csv", { type: "text/csv" }));
       setProductName("Linear");
-      setProductIdentity({ name: "Linear", sourceUrl: "https://linear.app" });
+      setProductIdentity({ name: "Linear", sourceUrl: "https://linear.app", fromPage: true });
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "Could not load demo dataset.";
       setError(message);
@@ -475,7 +531,7 @@ export function useResonanceState() {
     const blob = await response.blob();
     setFile(new File([blob], "scoring_fixture.csv", { type: "text/csv" }));
     setProductName("Linear");
-    setProductIdentity({ name: "Linear", sourceUrl: "https://linear.app" });
+    setProductIdentity({ name: "Linear", sourceUrl: "https://linear.app", fromPage: true });
   }
 
   async function replayFixture() {
@@ -731,6 +787,7 @@ export function useResonanceState() {
     setPhase("uploading");
 
     try {
+      const identityPromise = resolveProductIdentity(productName);
       const form = new FormData();
       form.set("file", file);
       const uploaded = await fetch("/api/upload", { method: "POST", body: form, signal });
@@ -758,11 +815,11 @@ export function useResonanceState() {
       assertCurrentRun(runId);
       const basename =
         uploadJson.filename ?? uploadJson.filePath.split("/").pop() ?? file.name;
-      const identity = await resolveProductIdentity(productName);
+      const identity = await identityPromise;
       assertCurrentRun(runId);
       const resolvedIdentity = {
         ...identity,
-        name: identity.name || cleanProductName(productName) || basename,
+        name: brandNameFrom(identity, productName) || basename,
       };
       setProductIdentity(resolvedIdentity);
       setProductName(resolvedIdentity.name);

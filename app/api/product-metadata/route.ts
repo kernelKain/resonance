@@ -1,10 +1,7 @@
-import { isPrivateAddress } from "@/lib/address";
-import { lookup } from "node:dns/promises";
-import net from "node:net";
-
 import { NextResponse } from "next/server";
 
 import { asProductUrl, hostnameLabel } from "@/lib/product-identity";
+import { fetchPublicUrl } from "@/lib/public-fetch";
 import { clientAddress, rateLimitResponse, takeRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -14,28 +11,13 @@ const MAX_HTML_BYTES = 512 * 1024;
 const FETCH_TIMEOUT_MS = 6_000;
 
 
-async function assertPublicUrl(url: URL): Promise<string> {
-  if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) {
-    throw new Error("Only public HTTP or HTTPS URLs are supported.");
-  }
-  const addresses = await lookup(url.hostname, { all: true, verbatim: true });
-  if (!addresses.length || addresses.some(({ address }) => isPrivateAddress(address))) {
-    throw new Error("Private or local network addresses are not supported.");
-  }
-  return addresses[0].address;
-}
-
 async function fetchPublicPage(initialUrl: URL): Promise<{ response: Response; url: URL }> {
   let current = initialUrl;
   for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect += 1) {
-    const ip = await assertPublicUrl(current);
-    const fetchUrl = new URL(current.toString());
-    fetchUrl.hostname = ip;
-    const response = await fetch(fetchUrl, {
-      redirect: "manual",
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    const response = await fetchPublicUrl(current, {
+      timeoutMs: FETCH_TIMEOUT_MS,
+      maxBytes: MAX_HTML_BYTES,
       headers: {
-        host: current.host,
         accept: "text/html,application/xhtml+xml",
         "user-agent": "ResonanceMetadata/1.0",
       },
@@ -108,11 +90,12 @@ function metaContent(html: string, key: string): string | null {
 
 function pageIdentity(html: string, url: URL) {
   const title = decodeHtml(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "");
-  const name =
+  const rawName =
     metaContent(html, "og:site_name") ||
     metaContent(html, "application-name") ||
     title.split(/\s+[|—–-]\s+/)[0]?.trim() ||
     hostnameLabel(url);
+  const name = asProductUrl(rawName) ? hostnameLabel(url) : rawName;
   const iconHref =
     html.match(/<link[^>]+rel=["'][^"']*(?:icon|shortcut icon)[^"']*["'][^>]+href=["']([^"']+)["'][^>]*>/i)?.[1] ??
     html.match(/<link[^>]+href=["']([^"']+)["'][^>]+rel=["'][^"']*(?:icon|shortcut icon)[^"']*["'][^>]*>/i)?.[1] ??
@@ -140,6 +123,7 @@ export async function POST(request: Request) {
     const identity = pageIdentity(html, finalUrl);
     return NextResponse.json({
       ...identity,
+      fromPage: true,
       logoUrl: identity.logoUrl
         ? `/api/product-logo?url=${encodeURIComponent(identity.logoUrl)}`
         : undefined,

@@ -22,6 +22,7 @@ import { ResultsSummary } from "./results-summary";
 import { HealthDot } from "./health-status";
 import { Metric } from "./metric-card";
 import { statusTextFromStream } from "@/lib/resonance-parse";
+import { brandNameFrom } from "@/lib/product-identity";
 import { cn } from "@/lib/utils";
 
 export function ResonanceApp() {
@@ -178,6 +179,7 @@ export function ResonanceApp() {
               <UploadCard
                 productName={productName}
                 setProductName={setProductName}
+                productIdentity={productIdentity}
                 file={file}
                 setFile={setFile}
                 phase={phase}
@@ -218,9 +220,14 @@ export function ResonanceApp() {
                   <p className="font-mono text-[11px] tracking-[0.24em] text-cyan-300 uppercase">
                     Live Analysis
                   </p>
-                  <h2 className="heading-gradient mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-                    {productIdentity?.name || productName.trim() || "Analysis"}
+                  <h2 className="mt-1 text-2xl font-semibold tracking-tight text-orange-300 drop-shadow-[0_0_18px_rgba(251,146,60,0.35)] sm:text-3xl">
+                    {brandNameFrom(productIdentity, productName)}
                   </h2>
+                  {productIdentity?.sourceUrl ? (
+                    <p className="mt-1 truncate font-mono text-xs text-muted-foreground">
+                      {productIdentity.sourceUrl}
+                    </p>
+                  ) : null}
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground" aria-live="polite">
                     {statusLine}
                   </p>

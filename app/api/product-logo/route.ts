@@ -1,10 +1,7 @@
-import { isPrivateAddress } from "@/lib/address";
-import { lookup } from "node:dns/promises";
-import net from "node:net";
-
 import sharp from "sharp";
 
 import { asProductUrl } from "@/lib/product-identity";
+import { fetchPublicUrl } from "@/lib/public-fetch";
 import { clientAddress, rateLimitResponse, takeRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -19,28 +16,14 @@ declare global {
 const logoCache = globalThis.resonanceLogoCache ??= new Map();
 const inFlight = globalThis.resonanceLogoInFlight ??= new Map();
 
-async function assertPublic(url: URL): Promise<string> {
-  if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) {
-    throw new Error("Unsupported logo URL.");
-  }
-  const addresses = await lookup(url.hostname, { all: true, verbatim: true });
-  if (!addresses.length || addresses.some(({ address }) => isPrivateAddress(address))) {
-    throw new Error("Private logo URL.");
-  }
-  return addresses[0].address;
-}
-
 async function fetchAndProcessLogo(requested: URL): Promise<Uint8Array> {
   let current = requested;
   let response: Response | null = null;
   for (let redirects = 0; redirects <= 3; redirects += 1) {
-    const ip = await assertPublic(current);
-    const fetchUrl = new URL(current.toString());
-    fetchUrl.hostname = ip;
-    response = await fetch(fetchUrl, {
-      redirect: "manual",
-      signal: AbortSignal.timeout(5_000),
-      headers: { host: current.host, accept: "image/*", "user-agent": "ResonanceLogo/1.0" },
+    response = await fetchPublicUrl(current, {
+      timeoutMs: 5_000,
+      maxBytes: MAX_LOGO_BYTES,
+      headers: { accept: "image/*", "user-agent": "ResonanceLogo/1.0" },
     });
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get("location");
@@ -55,25 +38,8 @@ async function fetchAndProcessLogo(requested: URL): Promise<Uint8Array> {
   if (!["image/png", "image/jpeg", "image/webp", "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon"].includes(contentType)) {
     throw new Error("Unsupported logo format.");
   }
-  const reader = response.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let size = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    size += value.byteLength;
-    if (size > MAX_LOGO_BYTES) {
-      await reader.cancel();
-      throw new Error("Logo is too large.");
-    }
-    chunks.push(value);
-  }
-  const body = new Uint8Array(size);
-  let offset = 0;
-  for (const chunk of chunks) {
-    body.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
+  const body = new Uint8Array(await response.arrayBuffer());
+  if (body.byteLength > MAX_LOGO_BYTES) throw new Error("Logo is too large.");
   return await sharp(body, {
     failOn: "error",
     limitInputPixels: 16_000_000,
@@ -111,7 +77,7 @@ export async function GET(request: Request) {
       promise = fetchAndProcessLogo(requested);
       inFlight.set(cacheKey, promise);
       promise.then(
-        (buffer) => {
+        (buffer: Uint8Array) => {
           if (logoCache.size > 1000) {
             // Lazy simple eviction
             const firstKey = logoCache.keys().next().value;
