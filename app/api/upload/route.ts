@@ -55,8 +55,10 @@ export async function POST(request: Request) {
       );
     }
 
+    const validRows = nonEmpty.filter((row) => (row[reviewTextCol] ?? "").trim().length > 0);
+
     // ── Pre-filter: keep short reviews (1-2 sentences, ≤ 400 chars), cap at 100
-    const filtered = nonEmpty
+    const filtered = validRows
       .filter((row) => {
         const reviewText = row[reviewTextCol] ?? "";
         if (reviewText.length > 400) return false;
@@ -66,8 +68,8 @@ export async function POST(request: Request) {
       })
       .slice(0, 100);
 
-    // Fall back to the first 100 non-empty rows if the filter removes everything
-    const rowsToWrite = filtered.length > 0 ? filtered : nonEmpty.slice(0, 100);
+    // Fall back to the first 100 valid rows if the filter removes everything
+    const rowsToWrite = filtered.length > 0 ? filtered : validRows.slice(0, 100);
     const csvToWrite = serialiseCsv(parsed.headers, rowsToWrite);
 
     await mkdir(UPLOAD_DIR, { recursive: true });
@@ -81,7 +83,7 @@ export async function POST(request: Request) {
       success: true,
       filePath: `${UPLOAD_DIR}/${filename}`,
       filename,
-      rowCount: nonEmpty.length,
+      rowCount: validRows.length,
       filteredRowCount: rowsToWrite.length,
       columns: parsed.headers,
     });

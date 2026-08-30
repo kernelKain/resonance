@@ -42,22 +42,15 @@ export type TranscriptItem = {
 
 const HITL_PAUSE_MARKER = "<!-- HITL_PAUSE -->";
 
-/**
- * Derives a short human-readable display name from either a plain product name
- * or a URL. For URLs we extract the hostname (minus www.) and the first path
- * segment if present, e.g. "https://www.amazon.com/dp/B09XYZ" → "amazon.com".
- */
-function deriveDisplayName(productName: string): string {
-  const trimmed = productName.trim();
+export function cleanProductName(input: string): string {
   try {
-    const url = new URL(trimmed);
-    const host = url.hostname.replace(/^www\./, "");
-    const firstSegment = url.pathname.split("/").filter(Boolean)[0];
-    return firstSegment ? `${host}/${firstSegment}` : host;
-  } catch {
-    // Not a URL — use as-is
-    return trimmed;
-  }
+    const isUrl = input.includes("://") || /^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(input.trim());
+    if (isUrl) {
+      const url = new URL(input.trim().includes("://") ? input.trim() : `https://${input.trim()}`);
+      if (url.hostname) return url.hostname.replace(/^www\./i, "");
+    }
+  } catch {}
+  return input.trim();
 }
 
 /**
@@ -230,7 +223,7 @@ export function useResonanceState() {
     setAssistant(assistantRef.current);
     setStream(extractResonanceStream(assistantRef.current));
     // Persist after every flush so a refresh restores the latest state
-    saveSession(productName, phase, assistantRef.current, uploadMeta);
+    saveSession(cleanProductName(productName), phase, assistantRef.current, uploadMeta);
   }
 
   function resetStream() {
@@ -424,7 +417,7 @@ export function useResonanceState() {
 
     setPendingQuestion(null);
     setPhase("done");
-    saveSession(productName, "done", assistantRef.current, uploadMeta);
+    saveSession(cleanProductName(productName), "done", assistantRef.current, uploadMeta);
   }
 
   async function runExcavation() {
@@ -460,9 +453,9 @@ export function useResonanceState() {
       const nextSessionId = await openSession();
       const basename =
         uploadJson.filename ?? uploadJson.filePath.split("/").pop() ?? file.name;
-      // Use the display-safe name in the prompt (resolves raw URLs to hostname)
-      const displayName = deriveDisplayName(productName) || basename;
-      const message = excavationPrompt(displayName, basename, effectiveRowCount);
+      const cleanName = cleanProductName(productName);
+      setProductName(cleanName);
+      const message = excavationPrompt(cleanName || basename, basename, effectiveRowCount);
 
       setTranscript([
         {
@@ -485,11 +478,12 @@ export function useResonanceState() {
     setError(null);
     resetStream();
     setUploadMeta({ filePath: "HITL_SMOKE", rowCount: 0 });
-    setProductName("Linear");
+    const cleanName = cleanProductName(productName);
+    setProductName(cleanName);
 
     try {
       const nextSessionId = await openSession();
-      const message = "HITL_SMOKE. Pause for approval. Do not read a CSV.";
+      const message = `HITL_SMOKE for ${cleanName}. Pause for approval. Do not read a CSV.`;
       setTranscript([
         {
           id: crypto.randomUUID(),

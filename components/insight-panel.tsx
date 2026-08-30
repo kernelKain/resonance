@@ -207,24 +207,24 @@ export function InsightPanel({ stream }: { stream: ResonanceStreamState }) {
                 <Users className="size-3.5 shrink-0" />
                 <span>Segments ({archetypes.length})</span>
                 <span className="hidden xl:inline-flex"><InfoTooltip content="Distinct behavioral profiles identified by clustering emotional signatures and phrasing patterns across reviews." /></span>
-                <motion.div layoutId="activeTab" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-[state=active]:block" />
+                <motion.div layoutId="activeTabIndicator" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-active:block" />
               </TabsTrigger>
               <TabsTrigger value="asks" className="group relative flex items-center gap-1.5 whitespace-nowrap rounded-none px-3 py-2.5 text-xs sm:text-sm after:hidden">
                 <Sparkles className="size-3.5 shrink-0" />
                 <span>Unspoken Needs ({asks.length})</span>
                 <span className="hidden xl:inline-flex"><InfoTooltip content="Latent desires that users express through emotional subtext rather than direct feature requests." /></span>
-                <motion.div layoutId="activeTab" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-[state=active]:block" />
+                <motion.div layoutId="activeTabIndicator" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-active:block" />
               </TabsTrigger>
               <TabsTrigger value="dissonance" className="group relative flex items-center gap-1.5 whitespace-nowrap rounded-none px-3 py-2.5 text-xs sm:text-sm after:hidden">
                 <AlertTriangle className="size-3.5 shrink-0" />
                 <span>Red Flags ({alerts.length})</span>
                 <span className="hidden xl:inline-flex"><InfoTooltip content="Cognitive dissonance detected when a user's literal words contradict their underlying emotional state." /></span>
-                <motion.div layoutId="activeTab" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-[state=active]:block" />
+                <motion.div layoutId="activeTabIndicator" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-active:block" />
               </TabsTrigger>
               <TabsTrigger value="actions" className="group relative flex items-center gap-1.5 whitespace-nowrap rounded-none px-3 py-2.5 text-xs sm:text-sm after:hidden">
                 <Waypoints className="size-3.5 shrink-0" />
                 <span>Recommendations ({actions.length})</span>
-                <motion.div layoutId="activeTab" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-[state=active]:block" />
+                <motion.div layoutId="activeTabIndicator" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-active:block" />
               </TabsTrigger>
             </TabsList>
           </div>
