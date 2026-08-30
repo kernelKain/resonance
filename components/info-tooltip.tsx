@@ -28,7 +28,6 @@ export function InfoTooltip({
 
       <Tooltip.Portal>
         <Tooltip.Popup
-          sideOffset={8}
           className="z-[200] w-[min(20rem,calc(100vw-2rem))] rounded-lg border border-border bg-popover px-4 py-3 text-sm leading-6 text-popover-foreground shadow-xl"
         >
           {content}
