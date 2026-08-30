@@ -246,7 +246,9 @@ function RadarGraphic({ stream }: { stream: ResonanceStreamState }) {
 
 function ProductLogo({ product }: { product: ProductIdentity }) {
   if (product.logoUrl) {
-    return <Image src={product.logoUrl} style={styles.logo} alt="" />;
+    // react-pdf Image is not an HTML image and has no alt prop.
+    // eslint-disable-next-line jsx-a11y/alt-text
+    return <Image src={product.logoUrl} style={styles.logo} />;
   }
   return (
     <View style={styles.logoFallback}>
