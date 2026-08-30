@@ -1,15 +1,20 @@
-import React from 'react';
-import { renderToString } from 'react-dom/server';
-import { Tooltip } from '@base-ui/react';
+import React from "react";
+import { renderToString } from "react-dom/server";
+import { Popover } from "@base-ui/react/popover";
 
 const Test = () => (
-  <Tooltip.Provider>
-    <Tooltip.Root>
-      <Tooltip.Trigger render={<span />}>
-        Test
-      </Tooltip.Trigger>
-    </Tooltip.Root>
-  </Tooltip.Provider>
+  <Popover.Root>
+    <Popover.Trigger>Test</Popover.Trigger>
+    <Popover.Portal>
+      <Popover.Positioner>
+        <Popover.Popup>Explanation</Popover.Popup>
+      </Popover.Positioner>
+    </Popover.Portal>
+  </Popover.Root>
 );
 
-console.log(renderToString(<Test />));
+const html = renderToString(<Test />);
+if (!html.includes("Test")) {
+  throw new Error("popover trigger did not render");
+}
+console.log(html);
