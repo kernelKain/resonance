@@ -9,6 +9,7 @@ type CircuitState = {
   retryAt: number;
   lastFailure?: string;
   probeInFlight: boolean;
+  probeDeadline?: number;
 };
 
 declare global {
@@ -33,9 +34,10 @@ export function selectAgentForNewSession(now = Date.now()): {
   if (state.status === "closed") {
     return { agentName: TRUEFORGE_AGENT_NAME, provider: "minimax", probingPrimary: false };
   }
-  if (now >= state.retryAt && !state.probeInFlight) {
+  if (now >= state.retryAt && (!state.probeInFlight || (state.probeDeadline && now > state.probeDeadline))) {
     state.status = "half-open";
     state.probeInFlight = true;
+    state.probeDeadline = now + 60_000;
     return { agentName: TRUEFORGE_AGENT_NAME, provider: "minimax", probingPrimary: true };
   }
   return {
@@ -51,6 +53,7 @@ export function recordPrimaryFailure(reason: string, now = Date.now()) {
   state.retryAt = now + MODEL_COOLDOWN_MS;
   state.lastFailure = reason.slice(0, 300);
   state.probeInFlight = false;
+  state.probeDeadline = undefined;
 }
 
 export function recordPrimarySuccess() {
@@ -59,6 +62,7 @@ export function recordPrimarySuccess() {
   state.retryAt = 0;
   state.lastFailure = undefined;
   state.probeInFlight = false;
+  state.probeDeadline = undefined;
 }
 
 export function releasePrimaryProbe() {
@@ -66,6 +70,7 @@ export function releasePrimaryProbe() {
   if (state.status === "half-open") {
     state.status = "open";
     state.probeInFlight = false;
+    state.probeDeadline = undefined;
   }
 }
 
