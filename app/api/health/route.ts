@@ -29,16 +29,12 @@ export async function GET() {
   let agent = false;
   let fallbackAgent = false;
   if (trueforge) {
-    try {
-      const [found, fallback] = await Promise.all([
-        findResonanceAgent(),
-        findAgentByName(TRUEFORGE_FALLBACK_AGENT_NAME),
-      ]);
-      agent = found?.name === TRUEFORGE_AGENT_NAME;
-      fallbackAgent = fallback?.name === TRUEFORGE_FALLBACK_AGENT_NAME;
-    } catch {
-      agent = false;
-    }
+    const [found, fallback] = await Promise.all([
+      findResonanceAgent().catch(() => null),
+      findAgentByName(TRUEFORGE_FALLBACK_AGENT_NAME).catch(() => null),
+    ]);
+    agent = found?.name === TRUEFORGE_AGENT_NAME;
+    fallbackAgent = fallback?.name === TRUEFORGE_FALLBACK_AGENT_NAME;
   }
 
   return NextResponse.json({
