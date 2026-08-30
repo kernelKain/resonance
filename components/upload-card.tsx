@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import {
   AlertTriangle,
   CheckCircle2,
+  ClipboardCopy,
   FileSpreadsheet,
   Loader2,
   Sparkles,
@@ -15,6 +16,7 @@ import { cn } from "@/lib/utils";
 import type { ResonancePhase } from "@/lib/resonance-parse";
 import type { ProductIdentity } from "@/lib/product-identity";
 import { asProductUrl, brandNameFrom } from "@/lib/product-identity";
+import { copyCsvGeneratorPrompt } from "@/lib/csv-prompt";
 
 const MAX_CSV_BYTES = 5 * 1024 * 1024;
 
@@ -57,6 +59,7 @@ export function UploadCard({
 }: UploadCardProps) {
   const [dragOver, setDragOver] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [promptCopied, setPromptCopied] = useState(false);
 
   function selectFile(candidate: File | null) {
     if (!candidate) {
@@ -193,6 +196,24 @@ export function UploadCard({
             Load demo dataset
           </Button>
         </div>
+        <Button
+          size="lg"
+          variant="outline"
+          className="w-full"
+          onClick={() => {
+            void copyCsvGeneratorPrompt().then((ok) => {
+              if (!ok) return;
+              setPromptCopied(true);
+              window.setTimeout(() => setPromptCopied(false), 2000);
+            });
+          }}
+        >
+          {promptCopied ? <CheckCircle2 className="size-4" /> : <ClipboardCopy className="size-4" />}
+          {promptCopied ? "Copied — paste into ChatGPT" : "Copy CSV generator prompt"}
+        </Button>
+        <p className="text-xs leading-5 text-muted-foreground">
+          No reviews yet? Copy the prompt, paste it into ChatGPT with any product URL, then upload the CSV it generates.
+        </p>
 
         {devMode && (
           <details className="group">
