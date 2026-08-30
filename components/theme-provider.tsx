@@ -28,10 +28,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   // Hydrate from localStorage on mount (client-only)
   useEffect(() => {
-    const saved = localStorage.getItem("resonance-theme") as Theme | null;
-    if (saved === "light" || saved === "dark") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTheme(saved);
+    try {
+      const saved = localStorage.getItem("resonance-theme") as Theme | null;
+      if (saved === "light" || saved === "dark") {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setTheme(saved);
+      }
+    } catch {
+      // ignore read errors
     }
   }, []);
 
@@ -44,7 +48,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       root.classList.remove("dark");
     }
     root.style.colorScheme = theme;
-    localStorage.setItem("resonance-theme", theme);
+    try {
+      localStorage.setItem("resonance-theme", theme);
+    } catch {
+      // ignore write errors
+    }
   }, [theme]);
 
   function toggleTheme() {
