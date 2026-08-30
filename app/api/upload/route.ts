@@ -86,19 +86,16 @@ export async function POST(request: Request) {
     // Explicitly filter out rows where the review text column is entirely empty
     const validRows = nonEmpty.filter((row) => (row[reviewTextCol] ?? "").trim().length > 0);
 
-    // ── Pre-filter: keep short reviews (1-2 sentences, ≤ 400 chars), cap at 100
-    const filtered = validRows
-      .filter((row) => {
-        const reviewText = row[reviewTextCol] ?? "";
-        if (reviewText.length > 400) return false;
-        // Count sentence boundaries — allow up to 4 (≈ 2 sentences with trailing punctuation)
-        const sentenceCount = (reviewText.match(/[.!?]/g) ?? []).length;
-        return sentenceCount <= 4;
-      })
-      .slice(0, 100);
-
-    // Fall back to the first 100 valid rows if the filter removes everything
-    const rowsToWrite = filtered.length > 0 ? filtered : validRows.slice(0, 100);
+    // Prefer short reviews, then fill up to 100 from the remaining valid rows.
+    const isShort = (row: Record<string, string>) => {
+      const reviewText = row[reviewTextCol] ?? "";
+      if (reviewText.length > 400) return false;
+      const sentenceCount = (reviewText.match(/[.!?]/g) ?? []).length;
+      return sentenceCount <= 4;
+    };
+    const short = validRows.filter(isShort);
+    const rest = validRows.filter((row) => !isShort(row));
+    const rowsToWrite = [...short, ...rest].slice(0, 100);
     const csvToWrite = serialiseCsv(parsed.headers, rowsToWrite);
 
     await mkdir(UPLOAD_DIR, { recursive: true });

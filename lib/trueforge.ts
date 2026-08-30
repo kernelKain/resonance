@@ -13,11 +13,23 @@ export async function trueforgeFetch(
     headers.set("content-type", "application/json");
   }
 
-  return fetch(trueforgeUrl(path), {
-    ...init,
-    headers,
-    cache: "no-store",
-  });
+  try {
+    return await fetch(trueforgeUrl(path), {
+      ...init,
+      headers,
+      cache: "no-store",
+    });
+  } catch (error) {
+    const cause =
+      error instanceof Error && error.cause instanceof Error
+        ? error.cause.message
+        : "";
+    throw new Error(
+      `Could not reach TrueForge at ${TRUEFORGE_BASE_URL}. Start it with \`npm run harness\`, then register the agent with \`npm run bootstrap\`.${
+        cause ? ` (${cause})` : ""
+      }`,
+    );
+  }
 }
 
 type AgentListResponse = {

@@ -67,8 +67,8 @@ export function UploadCard({
       setFileError(null);
       return;
     }
-    const csvType = !candidate.type || candidate.type === "text/csv" || candidate.type === "application/vnd.ms-excel";
-    if (!candidate.name.toLowerCase().endsWith(".csv") || !csvType) {
+    const nameOk = candidate.name.toLowerCase().endsWith(".csv");
+    if (!nameOk) {
       setFile(null);
       setFileError("Choose a CSV file.");
       return;
@@ -248,7 +248,7 @@ export function UploadCard({
         )}
 
         {!harnessReady ? (
-          <p className="rounded-lg border border-amber-400/25 bg-amber-400/8 px-3.5 py-3 text-xs leading-5 text-amber-100">
+            <p className="rounded-lg border border-amber-400/25 bg-amber-400/8 px-3.5 py-3 text-xs leading-5 text-amber-900 dark:text-amber-100">
             Analysis engine is not connected. In a second terminal run{" "}
             <code className="font-mono text-cyan-200">npm run harness</code>
             {devMode ? ", then " : " and "}

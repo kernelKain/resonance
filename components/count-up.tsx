@@ -42,6 +42,7 @@ export function CountUp({ value, duration = 800, className }: CountUpProps) {
 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      prevValue.current = to;
     };
   }, [value, duration]);
 

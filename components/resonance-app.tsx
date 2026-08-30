@@ -252,7 +252,14 @@ export function ResonanceApp() {
                   className="metric-card"
                   style={{ "--card-index": 0 } as React.CSSProperties}
                   label="Total Reviews"
-                  value={uploadMeta ? String(uploadMeta.rowCount) : "—"}
+                  value={
+                    uploadMeta
+                      ? uploadMeta.filteredRowCount != null &&
+                        uploadMeta.filteredRowCount !== uploadMeta.rowCount
+                        ? `${uploadMeta.filteredRowCount} of ${uploadMeta.rowCount}`
+                        : String(uploadMeta.filteredRowCount ?? uploadMeta.rowCount)
+                      : "—"
+                  }
                 />
                 <Metric
                   className="metric-card"
@@ -274,22 +281,16 @@ export function ResonanceApp() {
                 />
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <Metric
                   className="metric-card"
                   style={{ "--card-index": 4 } as React.CSSProperties}
-                  label="Segments"
-                  value={stream.analysis ? String(stream.analysis.archetypes?.length ?? 0) : "—"}
-                />
-                <Metric
-                  className="metric-card"
-                  style={{ "--card-index": 5 } as React.CSSProperties}
                   label="Unspoken Needs"
                   value={stream.analysis ? String(stream.analysis.hidden_asks?.length ?? 0) : "—"}
                 />
                 <Metric
                   className="metric-card"
-                  style={{ "--card-index": 6 } as React.CSSProperties}
+                  style={{ "--card-index": 5 } as React.CSSProperties}
                   label="Recommendations"
                   value={stream.actionItems ? String(stream.actionItems.items.length) : "paused"}
                   accent={Boolean(stream.actionItems)}
