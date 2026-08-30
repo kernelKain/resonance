@@ -1,6 +1,8 @@
 import { lookup } from "node:dns/promises";
 import net from "node:net";
 
+import sharp from "sharp";
+
 import { asProductUrl } from "@/lib/product-identity";
 
 export const runtime = "nodejs";
@@ -80,9 +82,16 @@ export async function GET(request: Request) {
       body.set(chunk, offset);
       offset += chunk.byteLength;
     }
-    return new Response(body, {
+    const normalized = await sharp(body, {
+      failOn: "error",
+      limitInputPixels: 16_000_000,
+    })
+      .resize(256, 256, { fit: "inside", withoutEnlargement: true })
+      .png()
+      .toBuffer();
+    return new Response(new Uint8Array(normalized), {
       headers: {
-        "content-type": contentType,
+        "content-type": "image/png",
         "cache-control": "public, max-age=3600",
         "x-content-type-options": "nosniff",
       },
