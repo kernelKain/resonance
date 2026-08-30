@@ -55,6 +55,7 @@ export async function POST(request: Request) {
       );
     }
 
+    // Explicitly filter out rows where the review text column is entirely empty
     const validRows = nonEmpty.filter((row) => (row[reviewTextCol] ?? "").trim().length > 0);
 
     // ── Pre-filter: keep short reviews (1-2 sentences, ≤ 400 chars), cap at 100
