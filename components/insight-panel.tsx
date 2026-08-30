@@ -40,9 +40,10 @@ function EmptyHint({ children }: { children: string }) {
 
 function ArchetypeCard({ archetype }: { archetype: ArchetypeCardModel }) {
   return (
-    <article 
+    <motion.article 
+      whileHover={{ y: -2 }}
       tabIndex={0} 
-      className="rounded-xl border border-cyan-400/15 bg-background/50 p-5 outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="rounded-xl border border-cyan-400/15 bg-background/50 p-5 outline-none transition-shadow hover:shadow-[0_8px_40px_rgba(34,211,238,0.12)] focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
@@ -96,15 +97,16 @@ function ArchetypeCard({ archetype }: { archetype: ArchetypeCardModel }) {
           ))}
         </ul>
       </details>
-    </article>
+    </motion.article>
   );
 }
 
 function HiddenAskCard({ ask }: { ask: HiddenAsk }) {
   return (
-    <article 
+    <motion.article 
+      whileHover={{ y: -2 }}
       tabIndex={0} 
-      className="rounded-xl border border-orange-400/20 bg-orange-400/8 p-5 outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="rounded-xl border border-orange-400/20 bg-orange-400/8 p-5 outline-none transition-shadow hover:shadow-[0_8px_40px_rgba(251,146,60,0.12)] focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h3 className="text-lg font-semibold tracking-tight">{ask.title}</h3>
@@ -119,15 +121,16 @@ function HiddenAskCard({ ask }: { ask: HiddenAsk }) {
       <p className="mt-4 font-mono text-[11px] tracking-[0.12em] text-orange-200/80 uppercase">
         Evidence: {ask.evidence_archetype}
       </p>
-    </article>
+    </motion.article>
   );
 }
 
 function DissonanceCard({ alert }: { alert: DissonanceAlert }) {
   return (
-    <article 
+    <motion.article 
+      whileHover={{ y: -2 }}
       tabIndex={0} 
-      className="rounded-xl border border-rose-400/25 bg-rose-400/8 p-5 outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="rounded-xl border border-rose-400/25 bg-rose-400/8 p-5 outline-none transition-shadow hover:shadow-[0_8px_40px_rgba(244,63,94,0.12)] focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <div className="flex flex-wrap items-center gap-2">
         <AlertTriangle className="size-3.5 text-orange-300" />
@@ -146,7 +149,7 @@ function DissonanceCard({ alert }: { alert: DissonanceAlert }) {
       <p className="mt-3 font-mono text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
         {alert.emotion_summary}
       </p>
-    </article>
+    </motion.article>
   );
 }
 
@@ -162,9 +165,10 @@ function ActionItemCard({
   effort: string;
 }) {
   return (
-    <article 
+    <motion.article 
+      whileHover={{ y: -2 }}
       tabIndex={0} 
-      className="rounded-xl border border-cyan-400/25 bg-cyan-400/8 p-5 shadow-[inset_3px_0_0_0_rgba(34,211,238,0.7)] outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="rounded-xl border border-cyan-400/25 bg-cyan-400/8 p-5 shadow-[inset_3px_0_0_0_rgba(34,211,238,0.7)] outline-none transition-shadow hover:shadow-[0_8px_40px_rgba(34,211,238,0.12)] focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h3 className="text-lg font-semibold tracking-tight">{hiddenAsk}</h3>
@@ -176,7 +180,7 @@ function ActionItemCard({
         </div>
       </div>
       <p className="mt-4 text-sm leading-7 text-foreground/90">{recommendation}</p>
-    </article>
+    </motion.article>
   );
 }
 
@@ -187,7 +191,7 @@ export function InsightPanel({ stream }: { stream: ResonanceStreamState }) {
   const actions = stream.actionItems?.items ?? [];
 
   return (
-    <Card className="border-cyan-400/20 bg-card/80 shadow-[0_0_60px_rgba(8,145,178,0.08)]">
+    <Card className="border-cyan-400/20 bg-card/80 shadow-[0_0_60px_rgba(8,145,178,0.08)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_40px_rgba(34,211,238,0.12)]">
       <CardHeader className="gap-2">
         <CardTitle className="text-lg tracking-tight">Analysis Results</CardTitle>
         <CardDescription className="leading-6">
@@ -199,24 +203,28 @@ export function InsightPanel({ stream }: { stream: ResonanceStreamState }) {
         <Tabs defaultValue="archetypes" className="w-full">
           <div className="border-b border-border/40">
             <TabsList variant="line" className="grid h-auto w-full grid-cols-2 divide-x divide-border/30 overflow-x-auto rounded-none border border-b-0 border-border/30 bg-transparent lg:grid-cols-4">
-              <TabsTrigger value="archetypes" className="group flex items-center gap-1.5 whitespace-nowrap rounded-none px-3 py-2.5 text-xs sm:text-sm">
+              <TabsTrigger value="archetypes" className="group relative flex items-center gap-1.5 whitespace-nowrap rounded-none px-3 py-2.5 text-xs sm:text-sm after:hidden">
                 <Users className="size-3.5 shrink-0" />
                 <span>Segments ({archetypes.length})</span>
                 <span className="hidden xl:inline-flex"><InfoTooltip content="Distinct behavioral profiles identified by clustering emotional signatures and phrasing patterns across reviews." /></span>
+                <motion.div layoutId="activeTab" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-[state=active]:block" />
               </TabsTrigger>
-              <TabsTrigger value="asks" className="group flex items-center gap-1.5 whitespace-nowrap rounded-none px-3 py-2.5 text-xs sm:text-sm">
+              <TabsTrigger value="asks" className="group relative flex items-center gap-1.5 whitespace-nowrap rounded-none px-3 py-2.5 text-xs sm:text-sm after:hidden">
                 <Sparkles className="size-3.5 shrink-0" />
                 <span>Unspoken Needs ({asks.length})</span>
                 <span className="hidden xl:inline-flex"><InfoTooltip content="Latent desires that users express through emotional subtext rather than direct feature requests." /></span>
+                <motion.div layoutId="activeTab" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-[state=active]:block" />
               </TabsTrigger>
-              <TabsTrigger value="dissonance" className="group flex items-center gap-1.5 whitespace-nowrap rounded-none px-3 py-2.5 text-xs sm:text-sm">
+              <TabsTrigger value="dissonance" className="group relative flex items-center gap-1.5 whitespace-nowrap rounded-none px-3 py-2.5 text-xs sm:text-sm after:hidden">
                 <AlertTriangle className="size-3.5 shrink-0" />
                 <span>Red Flags ({alerts.length})</span>
                 <span className="hidden xl:inline-flex"><InfoTooltip content="Cognitive dissonance detected when a user's literal words contradict their underlying emotional state." /></span>
+                <motion.div layoutId="activeTab" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-[state=active]:block" />
               </TabsTrigger>
-              <TabsTrigger value="actions" className="flex items-center gap-1.5 whitespace-nowrap rounded-none px-3 py-2.5 text-xs sm:text-sm">
+              <TabsTrigger value="actions" className="group relative flex items-center gap-1.5 whitespace-nowrap rounded-none px-3 py-2.5 text-xs sm:text-sm after:hidden">
                 <Waypoints className="size-3.5 shrink-0" />
                 <span>Recommendations ({actions.length})</span>
+                <motion.div layoutId="activeTab" className="absolute -bottom-[1px] left-2 right-2 hidden h-0.5 bg-cyan-300 group-data-[state=active]:block" />
               </TabsTrigger>
             </TabsList>
           </div>

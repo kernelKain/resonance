@@ -52,7 +52,7 @@ export function UploadCard({
   const [dragOver, setDragOver] = useState(false);
 
   return (
-    <Card className="noise-texture glass-surface mx-auto max-w-xl border-cyan-400/20 bg-card/85 shadow-[0_0_90px_rgba(8,145,178,0.12)] ring-1 ring-white/[0.04] ring-inset">
+    <Card className="noise-texture glass-surface mx-auto max-w-xl border-cyan-400/20 bg-card/85 shadow-[0_0_90px_rgba(8,145,178,0.12)] ring-1 ring-white/[0.04] ring-inset transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_40px_rgba(34,211,238,0.12)]">
       <CardHeader className="gap-3 px-6 pt-6">
         <CardTitle className="text-3xl tracking-tight">
           Analyze Customer Reviews
