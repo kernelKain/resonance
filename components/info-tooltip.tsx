@@ -13,7 +13,7 @@ export function InfoTooltip({ content }: { content: string }) {
     <Tooltip.Provider>
       <Tooltip.Root>
         <Tooltip.Trigger
-          render={<button type="button" />}
+          render={<span />}
           className="inline-flex items-center justify-center rounded-full p-1 text-muted-foreground transition-colors hover:bg-cyan-400/10 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300"
           aria-label="More information"
         >
