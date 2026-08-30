@@ -26,6 +26,7 @@ import {
   type TurnIngest,
 } from "@/lib/trueforge-events";
 import { readSse } from "@/hooks/use-sse-stream";
+import { isRetryableModelFailure } from "@/lib/model-router";
 import {
   asProductUrl,
   hostnameLabel,
@@ -60,14 +61,57 @@ export function cleanProductName(input: string): string {
  */
 function excavationPrompt(product: ProductIdentity, basename: string, rowCount: number) {
   const source = product.sourceUrl ? ` Product URL: ${product.sourceUrl}.` : "";
-  return `Follow the Emotion Archaeology protocol for product "${product.name}".${source} CSV file is ${basename} (${rowCount} reviews). Read it with the filesystem MCP (basename only — never a demo_data/ prefix). Spawn a subagent to research the product with Exa. Score every row. Emit compact JSON (no pretty-print) in every resonance-data fence. Persist scored_reviews.json. Copy scripts/cluster.py into the TrueForge sandbox and run cluster.py there. Emit cluster_results VERBATIM from cluster.py. Then name one archetype per cluster and write 3–5 Hidden Asks with action_items null. Emit analysis_result with scored_reviews [] and cluster_results {}. Then emit approval_request and call ask_user_question with options Approved and Decline. Do not emit action_items until the user answers Approved.`;
+  return `Follow the Emotion Archaeology protocol for product "${product.name}".${source} CSV file is ${basename} (${rowCount} reviews). Read it with the filesystem MCP (basename only — never a demo_data/ prefix). Spawn a subagent to research the product with Exa. Score every row. Immediately emit scored_reviews as compact JSON (no pretty-print) in a resonance-data fence in your assistant message — that fence is what the UI reads. Persist with write_analysis_file. Never cat a large JSON file through sandbox exec; that output is truncated and the turn will time out. Copy scripts/cluster.py into the TrueForge sandbox and run cluster.py there. Emit cluster_results VERBATIM from cluster.py in a resonance-data fence. Then name one archetype per cluster and write 3–5 Hidden Asks with action_items null. Emit analysis_result with scored_reviews [] and cluster_results {}. Then emit approval_request and call ask_user_question with options Approved and Decline. Do not emit action_items until the user answers Approved.`;
 }
 
 /**
  * Converts a raw TrueForge SSE event into a {@link TranscriptItem} if it is
  * a user-facing event type. Returns `null` for events that should be silent.
  */
-function summarizeEvent(event: Record<string, unknown>): TranscriptItem | null {
+function rememberToolCalls(
+  event: Record<string, unknown>,
+  toolNames: Map<string, string>,
+) {
+  if (String(event.type ?? "") !== "model.message") return;
+  const calls = event.tool_calls ?? event.toolCalls;
+  if (!Array.isArray(calls)) return;
+  for (const raw of calls) {
+    if (!raw || typeof raw !== "object") continue;
+    const call = raw as Record<string, unknown>;
+    const fn = (call.function ?? call) as Record<string, unknown>;
+    const id = String(call.id ?? "");
+    const name = String(fn.name ?? call.name ?? "");
+    if (id && name) toolNames.set(id, name);
+  }
+}
+
+function toolLabel(event: Record<string, unknown>, toolNames: Map<string, string>): string {
+  const id = String(event.tool_call_id ?? event.toolCallId ?? "");
+  return (
+    (id && toolNames.get(id)) ||
+    String(event.name ?? event.tool ?? event.toolName ?? event.original_tool_name ?? "tool")
+  );
+}
+
+function mergeResonanceStream(
+  current: ResonanceStreamState,
+  incoming: ResonanceStreamState,
+): ResonanceStreamState {
+  return {
+    scored: incoming.scored ?? current.scored,
+    clustered: incoming.clustered ?? current.clustered,
+    analysis: incoming.analysis ?? current.analysis,
+    approval: incoming.approval ?? current.approval,
+    actionItems: incoming.actionItems ?? current.actionItems,
+    fenceCount: current.fenceCount + incoming.fenceCount,
+    parseErrors: [...current.parseErrors, ...incoming.parseErrors],
+  };
+}
+
+function summarizeEvent(
+  event: Record<string, unknown>,
+  toolNames: Map<string, string>,
+): TranscriptItem | null {
   const type = String(event.type ?? "");
   if (type === "turn.created") {
     return { id: crypto.randomUUID(), kind: "status", text: "TrueForge turn started." };
@@ -85,7 +129,7 @@ function summarizeEvent(event: Record<string, unknown>): TranscriptItem | null {
     return { id: crypto.randomUUID(), kind: "tool", text: `MCP connected: ${name}` };
   }
   if (type === "tool.response") {
-    const name = String(event.name ?? event.tool ?? event.toolName ?? "tool");
+    const name = toolLabel(event, toolNames);
     return { id: crypto.randomUUID(), kind: "tool", text: `Tool returned: ${name}` };
   }
   if (type === "sandbox.created") {
@@ -129,20 +173,56 @@ function deltaText(event: Record<string, unknown>): string {
 function turnFailure(event: Record<string, unknown>): string | null {
   const type = String(event.type ?? "");
   if (["model.error", "turn.error", "turn.failed"].includes(type)) {
-    return String(event.message ?? event.error ?? "The model stream failed.");
+    return friendlyModelError(event.message ?? event.error);
   }
   if (type === "turn.done") {
-    const state = event.state as { status?: string; error?: unknown } | undefined;
+    const state = event.state as
+      | { status?: string; error?: unknown; message?: unknown; reason?: unknown }
+      | undefined;
     if (state?.status === "failed" || state?.status === "error") {
-      return String(state.error ?? "The model could not complete the turn.");
+      return friendlyModelError(state.message ?? state.error);
+    }
+    if (state?.status === "cancelled") {
+      const reason = String(state.reason ?? "");
+      if (reason.includes("timeout")) {
+        return "The analysis timed out. The model used tools for too long and never streamed scored reviews to the UI. Retry the run.";
+      }
+      return reason ? `The analysis was cancelled (${reason}).` : "The analysis was cancelled.";
     }
   }
   return null;
 }
 
+function friendlyModelError(raw: unknown): string {
+  const text = String(raw ?? "").trim() || "The model could not complete the turn.";
+  const lower = text.toLowerCase();
+  if (
+    lower.includes("rate_limit") ||
+    lower.includes("rate limit") ||
+    /\b429\b/.test(lower)
+  ) {
+    return "The primary model hit a rate limit (OpenRouter / MiniMax). Retry the analysis — Resonance will use DeepSeek if MiniMax is still limited.";
+  }
+  return text;
+}
+
 /** Promise-based sleep utility used when retrying failed API calls. */
 function sleep(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function isAbortError(error: unknown): boolean {
+  return (
+    (error instanceof DOMException && error.name === "AbortError") ||
+    (error instanceof Error && error.name === "AbortError")
+  );
+}
+
+class RunCancelledError extends Error {
+  constructor() {
+    super("Run cancelled");
+    this.name = "RunCancelledError";
+  }
 }
 
 /**
@@ -175,6 +255,32 @@ export function useResonanceState() {
   const assistantRef = useRef("");
   const replayCancelRef = useRef(false);
   const flushRafRef = useRef<number | null>(null);
+  const runGenerationRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
+
+  function isCurrentRun(runId: number) {
+    return runGenerationRef.current === runId;
+  }
+
+  function assertCurrentRun(runId: number) {
+    if (!isCurrentRun(runId)) throw new RunCancelledError();
+  }
+
+  function cancelActiveWork() {
+    runGenerationRef.current += 1;
+    replayCancelRef.current = true;
+    abortRef.current?.abort();
+    abortRef.current = null;
+    cancelFlush();
+  }
+
+  function beginWork(): { runId: number; signal: AbortSignal } {
+    cancelActiveWork();
+    replayCancelRef.current = false;
+    const controller = new AbortController();
+    abortRef.current = controller;
+    return { runId: runGenerationRef.current, signal: controller.signal };
+  }
 
   // ── Session persistence ──────────────────────────────────────────────────────
   // On mount: rehydrate state from sessionStorage so a page refresh doesn't
@@ -283,7 +389,8 @@ export function useResonanceState() {
     }
   }
 
-  function flushAssistant() {
+  function flushAssistant(runId = runGenerationRef.current) {
+    if (!isCurrentRun(runId)) return;
     cancelFlush();
     setAssistant(assistantRef.current);
     setStream(extractResonanceStream(assistantRef.current));
@@ -308,7 +415,7 @@ export function useResonanceState() {
   }
 
   function resetRun() {
-    replayCancelRef.current = true;
+    cancelActiveWork();
     resetStream();
     setFile(null);
     setProductName("");
@@ -318,14 +425,17 @@ export function useResonanceState() {
     setPhase("idle");
   }
 
-  function ingestAssistantChunk(piece: string) {
-    if (!piece) return;
+  function ingestAssistantChunk(piece: string, runId = runGenerationRef.current) {
+    if (!piece || !isCurrentRun(runId)) return;
     assistantRef.current += piece;
     if (flushRafRef.current != null) return;
     flushRafRef.current = window.requestAnimationFrame(() => {
       flushRafRef.current = null;
+      if (!isCurrentRun(runId)) return;
       setAssistant(assistantRef.current);
-      setStream(extractResonanceStream(assistantRef.current));
+      setStream((current) =>
+        mergeResonanceStream(current, extractResonanceStream(assistantRef.current)),
+      );
     });
   }
 
@@ -369,7 +479,7 @@ export function useResonanceState() {
   }
 
   async function replayFixture() {
-    replayCancelRef.current = false;
+    const { runId } = beginWork();
     setError(null);
     resetStream();
     setUploadMeta({ filePath: "public/demo/stream_fixture.txt", rowCount: 3 });
@@ -384,17 +494,21 @@ export function useResonanceState() {
 
     try {
       const response = await fetch("/demo/stream_fixture.txt", { cache: "no-store" });
+      assertCurrentRun(runId);
       if (!response.ok) throw new Error("Could not load stream_fixture.txt");
       const text = await response.text();
+      assertCurrentRun(runId);
       const size = 28;
       for (let i = 0; i < text.length; i += size) {
-        if (replayCancelRef.current) return;
-        ingestAssistantChunk(text.slice(i, i + size));
+        assertCurrentRun(runId);
+        ingestAssistantChunk(text.slice(i, i + size), runId);
         await sleep(12);
       }
-      flushAssistant();
+      flushAssistant(runId);
+      assertCurrentRun(runId);
       setPhase("done");
     } catch (caught) {
+      if (caught instanceof RunCancelledError || isAbortError(caught)) return;
       const message = caught instanceof Error ? caught.message : "Replay failed.";
       setError(message);
       setPhase("error");
@@ -402,7 +516,7 @@ export function useResonanceState() {
   }
 
   async function replayHitlFixture() {
-    replayCancelRef.current = false;
+    const { runId } = beginWork();
     setError(null);
     resetStream();
     setUploadMeta({ filePath: "public/demo/day5_stream_fixture.txt", rowCount: 3 });
@@ -417,19 +531,22 @@ export function useResonanceState() {
 
     try {
       const response = await fetch("/demo/day5_stream_fixture.txt", { cache: "no-store" });
+      assertCurrentRun(runId);
       if (!response.ok) throw new Error("Could not load day5_stream_fixture.txt");
       const text = await response.text();
+      assertCurrentRun(runId);
       const markerAt = text.indexOf(HITL_PAUSE_MARKER);
       if (markerAt < 0) throw new Error("HITL fixture is missing <!-- HITL_PAUSE -->");
       const before = text.slice(0, markerAt);
       const after = text.slice(markerAt + HITL_PAUSE_MARKER.length);
       const size = 28;
       for (let i = 0; i < before.length; i += size) {
-        if (replayCancelRef.current) return;
-        ingestAssistantChunk(before.slice(i, i + size));
+        assertCurrentRun(runId);
+        ingestAssistantChunk(before.slice(i, i + size), runId);
         await sleep(12);
       }
-      flushAssistant();
+      flushAssistant(runId);
+      assertCurrentRun(runId);
       const parsed = extractResonanceStream(assistantRef.current);
       setReplayTail(after);
       setPendingQuestion(
@@ -448,6 +565,7 @@ export function useResonanceState() {
       ]);
       setPhase("awaiting_approval");
     } catch (caught) {
+      if (caught instanceof RunCancelledError || isAbortError(caught)) return;
       const message = caught instanceof Error ? caught.message : "HITL replay failed.";
       setError(message);
       setPhase("error");
@@ -457,11 +575,13 @@ export function useResonanceState() {
   async function openSession(
     forceFallback = false,
     failure?: string,
+    signal?: AbortSignal,
   ): Promise<{ sessionId: string; agentName: string }> {
     const sessionRes = await fetch("/api/session", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ forceFallback, failure }),
+      signal,
     });
     const sessionJson = (await sessionRes.json()) as {
       sessionId?: string;
@@ -483,12 +603,16 @@ export function useResonanceState() {
     body: Record<string, unknown>,
     turnAgentName = activeAgentName,
     allowFallback = true,
+    runId = runGenerationRef.current,
+    signal?: AbortSignal,
   ) {
     const turnRes = await fetch("/api/turn", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ sessionId: nextSessionId, agentName: turnAgentName, ...body }),
+      signal,
     });
+    assertCurrentRun(runId);
 
     if (!turnRes.ok) {
       const failed = (await turnRes.json()) as { error?: string };
@@ -515,27 +639,52 @@ export function useResonanceState() {
     }
 
     const messages = new Map<string, Record<string, unknown>>();
+    const toolNames = new Map<string, string>();
     let ingest: TurnIngest = { pending: pendingQuestion, paused: false };
     let streamFailure: string | null = null;
     let producedAssistantText = false;
 
-    await readSse(turnRes, (event) => {
-      ingest = applyTurnEvent(event, messages, ingest);
-      streamFailure ??= turnFailure(event);
-      const piece = deltaText(event);
-      if (piece) {
-        producedAssistantText = true;
-        ingestAssistantChunk(piece);
-        return;
-      }
-      const item = summarizeEvent(event);
-      if (item) {
-        setTranscript((current) => [...current, item]);
-      }
-    });
+    await readSse(
+      turnRes,
+      (event) => {
+        if (!isCurrentRun(runId)) return;
+        rememberToolCalls(event, toolNames);
+        ingest = applyTurnEvent(event, messages, ingest);
+        streamFailure ??= turnFailure(event);
+        if (event.type === "tool.response") {
+          const content = String(event.content ?? "");
+          if (content.includes('"type"')) {
+            const fromTool = extractResonanceStream(content);
+            if (fromTool.scored || fromTool.clustered || fromTool.analysis) {
+              setStream((current) => mergeResonanceStream(current, fromTool));
+            }
+          }
+        }
+        const piece = deltaText(event);
+        if (piece) {
+          producedAssistantText = true;
+          ingestAssistantChunk(piece, runId);
+          return;
+        }
+        const item = summarizeEvent(event, toolNames);
+        if (item) {
+          setTranscript((current) => [...current, item]);
+        }
+      },
+      signal,
+    );
+    assertCurrentRun(runId);
 
-    if (streamFailure && allowFallback && body.message && !producedAssistantText) {
-      const fallback = await openSession(true, streamFailure);
+    const hasAnalysisOutput = assistantRef.current.includes("```resonance-data");
+    if (
+      streamFailure &&
+      allowFallback &&
+      body.message &&
+      !hasAnalysisOutput &&
+      (isRetryableModelFailure(0, streamFailure) || !producedAssistantText)
+    ) {
+      const fallback = await openSession(true, streamFailure, signal);
+      assertCurrentRun(runId);
       setTranscript((current) => [
         ...current,
         {
@@ -544,7 +693,7 @@ export function useResonanceState() {
           text: "MiniMax could not start the analysis. Retrying with DeepSeek V4 Flash.",
         },
       ]);
-      await streamTurn(fallback.sessionId, body, fallback.agentName, false);
+      await streamTurn(fallback.sessionId, body, fallback.agentName, false, runId, signal);
       return;
     }
 
@@ -552,7 +701,7 @@ export function useResonanceState() {
       throw new Error(streamFailure);
     }
 
-    flushAssistant();
+    flushAssistant(runId);
     extractResonanceStream(assistantRef.current);
 
     if (ingest.paused) {
@@ -576,7 +725,7 @@ export function useResonanceState() {
 
   async function runExcavation() {
     if (!file) return;
-    replayCancelRef.current = true;
+    const { runId, signal } = beginWork();
     setError(null);
     resetStream();
     setPhase("uploading");
@@ -584,7 +733,8 @@ export function useResonanceState() {
     try {
       const form = new FormData();
       form.set("file", file);
-      const uploaded = await fetch("/api/upload", { method: "POST", body: form });
+      const uploaded = await fetch("/api/upload", { method: "POST", body: form, signal });
+      assertCurrentRun(runId);
       const uploadJson = (await uploaded.json()) as {
         success?: boolean;
         error?: string;
@@ -604,10 +754,12 @@ export function useResonanceState() {
         filteredRowCount: uploadJson.filteredRowCount,
       });
 
-      const nextSession = await openSession();
+      const nextSession = await openSession(false, undefined, signal);
+      assertCurrentRun(runId);
       const basename =
         uploadJson.filename ?? uploadJson.filePath.split("/").pop() ?? file.name;
       const identity = await resolveProductIdentity(productName);
+      assertCurrentRun(runId);
       const resolvedIdentity = {
         ...identity,
         name: identity.name || cleanProductName(productName) || basename,
@@ -624,8 +776,9 @@ export function useResonanceState() {
         },
       ]);
       setPhase("running");
-      await streamTurn(nextSession.sessionId, { message }, nextSession.agentName);
+      await streamTurn(nextSession.sessionId, { message }, nextSession.agentName, true, runId, signal);
     } catch (caught) {
+      if (caught instanceof RunCancelledError || isAbortError(caught)) return;
       const message = caught instanceof Error ? caught.message : "Run failed.";
       setError(message);
       setPhase("error");
@@ -633,7 +786,7 @@ export function useResonanceState() {
   }
 
   async function runHitlSmoke() {
-    replayCancelRef.current = true;
+    const { runId, signal } = beginWork();
     setError(null);
     resetStream();
     setUploadMeta({ filePath: "HITL_SMOKE", rowCount: 0 });
@@ -641,7 +794,8 @@ export function useResonanceState() {
     setProductName(cleanName);
 
     try {
-      const nextSession = await openSession();
+      const nextSession = await openSession(false, undefined, signal);
+      assertCurrentRun(runId);
       const message = `HITL_SMOKE for ${cleanName}. Pause for approval. Do not read a CSV.`;
       setTranscript([
         {
@@ -651,8 +805,9 @@ export function useResonanceState() {
         },
       ]);
       setPhase("running");
-      await streamTurn(nextSession.sessionId, { message }, nextSession.agentName);
+      await streamTurn(nextSession.sessionId, { message }, nextSession.agentName, true, runId, signal);
     } catch (caught) {
+      if (caught instanceof RunCancelledError || isAbortError(caught)) return;
       const message = caught instanceof Error ? caught.message : "HITL smoke failed.";
       setError(message);
       setPhase("error");
@@ -661,6 +816,9 @@ export function useResonanceState() {
 
   async function decide(content: "Approved" | "Decline") {
     if (!pendingQuestion?.toolCallId || decisionBusy) return;
+    const runId = runGenerationRef.current;
+    if (!abortRef.current) abortRef.current = new AbortController();
+    const signal = abortRef.current.signal;
     setDecisionBusy(true);
     setError(null);
 
@@ -679,11 +837,13 @@ export function useResonanceState() {
           const tail = replayTail;
           const size = 28;
           for (let i = 0; i < tail.length; i += size) {
-            ingestAssistantChunk(tail.slice(i, i + size));
+            assertCurrentRun(runId);
+            ingestAssistantChunk(tail.slice(i, i + size), runId);
             await sleep(12);
           }
-          flushAssistant();
+          flushAssistant(runId);
         }
+        assertCurrentRun(runId);
         setPendingQuestion(null);
         setReplayTail("");
         setPhase("done");
@@ -695,19 +855,27 @@ export function useResonanceState() {
       }
 
       setPhase("running");
-      await streamTurn(sessionId, {
-        toolResponse: {
-          threadId: pendingQuestion.threadId,
-          toolCallId: pendingQuestion.toolCallId,
-          content,
+      await streamTurn(
+        sessionId,
+        {
+          toolResponse: {
+            threadId: pendingQuestion.threadId,
+            toolCallId: pendingQuestion.toolCallId,
+            content,
+          },
         },
-      });
+        activeAgentName,
+        true,
+        runId,
+        signal,
+      );
     } catch (caught) {
+      if (caught instanceof RunCancelledError || isAbortError(caught)) return;
       const message = caught instanceof Error ? caught.message : "Could not resume the turn.";
       setError(message);
       setPhase("error");
     } finally {
-      setDecisionBusy(false);
+      if (isCurrentRun(runId)) setDecisionBusy(false);
     }
   }
 

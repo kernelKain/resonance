@@ -93,7 +93,7 @@ export function ResonanceApp() {
             : "Starting…";
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
+    <div className="relative min-h-screen overflow-x-hidden bg-background">
       <div
         className={cn(
           "pointer-events-none absolute inset-0 transition-opacity duration-500",
@@ -166,14 +166,14 @@ export function ResonanceApp() {
         )}
       >
         <section className="min-w-0" id="main-content">
-          <AnimatePresence mode="wait">
+          <AnimatePresence initial={false}>
           {!showWorkbench ? (
             <motion.div
               key="upload"
-              initial={{ opacity: 0, scale: 0.96, y: 12 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 12 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.12, ease: "easeOut" }}
             >
               <UploadCard
                 productName={productName}
