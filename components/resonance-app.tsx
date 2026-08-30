@@ -306,6 +306,8 @@ export function ResonanceApp() {
                 <ResultsSummary
                   stream={stream}
                   productName={productIdentity?.name || productName}
+                  productIdentity={productIdentity}
+                  modelProvider={modelProvider}
                 />
               ) : null}
             </div>

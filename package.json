@@ -13,7 +13,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "npm run test:all",
-    "test:all": "npm run test:parse && npm run test:plutchik && npm run test:insights && npm run test:hitl && npm run test:turn && npm run test:hitl-parse && npm run test:hero && npm run test:tooltip && npm run test:model-router",
+    "test:all": "npm run test:parse && npm run test:plutchik && npm run test:insights && npm run test:hitl && npm run test:turn && npm run test:hitl-parse && npm run test:hero && npm run test:tooltip && npm run test:model-router && npm run test:pdf",
     "test:parse": "npx --yes tsx scripts/validate-stream-parse.ts",
     "test:plutchik": "npx --yes tsx scripts/validate-plutchik-averages.ts",
     "test:insights": "npx --yes tsx scripts/validate-insight-views.ts",
@@ -22,11 +22,13 @@
     "test:hitl-parse": "npx --yes tsx scripts/validate-hitl-stream-parse.ts",
     "test:hero": "npx --yes tsx scripts/validate-hero-csv.ts",
     "test:tooltip": "npx --yes tsx scripts/validate-tooltip.tsx",
-    "test:model-router": "npx --yes tsx scripts/validate-model-router.ts"
+    "test:model-router": "npx --yes tsx scripts/validate-model-router.ts",
+    "test:pdf": "npx --yes tsx scripts/validate-pdf.tsx"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
     "@modelcontextprotocol/sdk": "^1.30.0",
+    "@react-pdf/renderer": "^4.9.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "concurrently": "^10.0.5",

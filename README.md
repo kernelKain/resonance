@@ -140,8 +140,7 @@ Follow the TrueForge documentation to start the harness with the `resonance` age
 3. Watch the **Live Analysis** stepper — each stage shows a contextual hint explaining what the AI is doing.
 4. When the agent reaches **Approval**, review the archetypes and Hidden Asks in the panel.
 5. Click **Approve** (or **Decline** to abort). Recommendations are only generated after Approve.
-6. Use **Export PDF** to print the results via the browser print dialog.
-7. Use **Share** to copy a base64-encoded summary link to the clipboard.
+6. Use **Export PDF** to download the complete dark-theme report.
 
 ### Keyboard shortcut
 
@@ -195,7 +194,8 @@ resonance/
 │   ├── insight-panel.tsx   # Tabbed panel: Segments / Needs / Red Flags / Recs
 │   ├── agent-output.tsx    # Live Analysis card — stepper + activity log
 │   ├── analysis-progress.tsx # 6-step progress stepper with contextual hints
-│   ├── results-summary.tsx # Executive Summary + Export PDF + Share
+│   ├── results-summary.tsx # Executive Summary + structured PDF export
+│   ├── pdf/                # Branded, paginated dark-theme PDF document
 │   ├── transcript-sidebar.tsx # Dev-mode raw transcript
 │   ├── plutchik-mark.tsx   # Animated SVG logo (dual-ring Plutchik wheel)
 │   ├── approval-modal.tsx  # HITL Approve / Decline dialog

@@ -159,7 +159,13 @@ export async function POST(request: Request) {
     const { response, url: finalUrl } = await fetchPublicPage(url);
     const html = await readLimitedHtml(response);
     const identity = pageIdentity(html, finalUrl);
-    return NextResponse.json({ ...identity, sourceUrl: finalUrl.toString() });
+    return NextResponse.json({
+      ...identity,
+      logoUrl: identity.logoUrl
+        ? `/api/product-logo?url=${encodeURIComponent(identity.logoUrl)}`
+        : undefined,
+      sourceUrl: finalUrl.toString(),
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not inspect the product URL.";
     return NextResponse.json({ error: message }, { status: 422 });
