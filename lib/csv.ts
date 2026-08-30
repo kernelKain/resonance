@@ -107,3 +107,58 @@ export function requireReviewTextColumn(headers: string[]): string {
   }
   return match;
 }
+
+const CSV_MIME_TYPES = new Set([
+  "text/csv",
+  "application/vnd.ms-excel",
+  "text/comma-separated-values",
+  "application/csv",
+]);
+
+const NON_CSV_MIME_PREFIXES = ["image/", "video/", "audio/", "font/"];
+
+const NON_CSV_MIME_TYPES = new Set([
+  "application/pdf",
+  "application/zip",
+  "application/x-zip-compressed",
+  "application/gzip",
+  "application/json",
+  "application/javascript",
+]);
+
+/**
+ * Permissive client-side check: require a `.csv` extension and reject obvious
+ * non-CSV MIME types when the browser reports one.
+ */
+export function isCsvUploadCandidate(file: Pick<File, "name" | "type">): boolean {
+  if (!file.name.toLowerCase().endsWith(".csv")) return false;
+
+  const type = file.type.trim().toLowerCase();
+  if (!type) return true;
+  if (CSV_MIME_TYPES.has(type) || type.startsWith("text/")) return true;
+  if (NON_CSV_MIME_PREFIXES.some((prefix) => type.startsWith(prefix))) return false;
+  if (NON_CSV_MIME_TYPES.has(type)) return false;
+
+  return true;
+}
+
+/**
+ * Lightweight parse used before upload to surface CSV issues in the UI.
+ *
+ * @returns `null` when valid, otherwise a user-facing error message.
+ */
+export function validateCsvUploadText(text: string): string | null {
+  try {
+    const parsed = parseCsv(text);
+    const reviewTextCol = requireReviewTextColumn(parsed.headers);
+    const hasReviewRow = parsed.rows.some(
+      (row) => (row[reviewTextCol] ?? "").trim().length > 0,
+    );
+    if (!hasReviewRow) {
+      return "CSV has a header but no review rows.";
+    }
+    return null;
+  } catch (error) {
+    return error instanceof Error ? error.message : "Invalid CSV file.";
+  }
+}

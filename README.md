@@ -200,7 +200,7 @@ resonance/
 │   ├── transcript-sidebar.tsx # Dev-mode raw transcript
 │   ├── plutchik-mark.tsx   # Animated SVG logo (dual-ring Plutchik wheel)
 │   ├── approval-modal.tsx  # HITL Approve / Decline dialog
-│   ├── info-tooltip.tsx    # Portal-based tooltip (z-index safe)
+│   ├── info-tooltip.tsx    # Click-to-open info popover (portal, z-index safe)
 │   └── ...
 ├── hooks/
 │   ├── use-resonance-state.ts # Central state + streaming + session persistence

@@ -17,23 +17,13 @@ const logoCache = globalThis.resonanceLogoCache ??= new Map();
 const inFlight = globalThis.resonanceLogoInFlight ??= new Map();
 
 async function fetchAndProcessLogo(requested: URL): Promise<Uint8Array> {
-  let current = requested;
-  let response: Response | null = null;
-  for (let redirects = 0; redirects <= 3; redirects += 1) {
-    response = await fetchPublicUrl(current, {
-      timeoutMs: 5_000,
-      maxBytes: MAX_LOGO_BYTES,
-      headers: { accept: "image/*", "user-agent": "ResonanceLogo/1.0" },
-    });
-    if (response.status >= 300 && response.status < 400) {
-      const location = response.headers.get("location");
-      if (!location || redirects === 3) throw new Error("Too many redirects.");
-      current = new URL(location, current);
-      continue;
-    }
-    break;
-  }
-  if (!response?.ok || !response.body) throw new Error("Logo could not be fetched.");
+  const { response } = await fetchPublicUrl(requested, {
+    timeoutMs: 5_000,
+    maxBytes: MAX_LOGO_BYTES,
+    maxRedirects: 3,
+    headers: { accept: "image/*", "user-agent": "ResonanceLogo/1.0" },
+  });
+  if (!response.ok || !response.body) throw new Error("Logo could not be fetched.");
   const contentType = response.headers.get("content-type")?.split(";")[0] ?? "";
   if (!["image/png", "image/jpeg", "image/webp", "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon"].includes(contentType)) {
     throw new Error("Unsupported logo format.");

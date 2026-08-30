@@ -12,32 +12,21 @@ const FETCH_TIMEOUT_MS = 6_000;
 
 
 async function fetchPublicPage(initialUrl: URL): Promise<{ response: Response; url: URL }> {
-  let current = initialUrl;
-  for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect += 1) {
-    const response = await fetchPublicUrl(current, {
-      timeoutMs: FETCH_TIMEOUT_MS,
-      maxBytes: MAX_HTML_BYTES,
-      headers: {
-        accept: "text/html,application/xhtml+xml",
-        "user-agent": "ResonanceMetadata/1.0",
-      },
-    });
-    if (response.status >= 300 && response.status < 400) {
-      const location = response.headers.get("location");
-      if (!location || redirect === MAX_REDIRECTS) {
-        throw new Error("The product URL redirected too many times.");
-      }
-      current = new URL(location, current);
-      continue;
-    }
-    if (!response.ok) throw new Error(`The product page returned ${response.status}.`);
-    const contentType = response.headers.get("content-type") ?? "";
-    if (!contentType.includes("text/html") && !contentType.includes("application/xhtml+xml")) {
-      throw new Error("The product URL did not return an HTML page.");
-    }
-    return { response, url: current };
+  const { response, url } = await fetchPublicUrl(initialUrl, {
+    timeoutMs: FETCH_TIMEOUT_MS,
+    maxBytes: MAX_HTML_BYTES,
+    maxRedirects: MAX_REDIRECTS,
+    headers: {
+      accept: "text/html,application/xhtml+xml",
+      "user-agent": "ResonanceMetadata/1.0",
+    },
+  });
+  if (!response.ok) throw new Error(`The product page returned ${response.status}.`);
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("text/html") && !contentType.includes("application/xhtml+xml")) {
+    throw new Error("The product URL did not return an HTML page.");
   }
-  throw new Error("Could not resolve the product URL.");
+  return { response, url };
 }
 
 async function readLimitedHtml(response: Response): Promise<string> {

@@ -104,8 +104,8 @@ function mergeResonanceStream(
     analysis: incoming.analysis ?? current.analysis,
     approval: incoming.approval ?? current.approval,
     actionItems: incoming.actionItems ?? current.actionItems,
-    fenceCount: current.fenceCount + incoming.fenceCount,
-    parseErrors: [...current.parseErrors, ...incoming.parseErrors],
+    fenceCount: incoming.fenceCount,
+    parseErrors: incoming.parseErrors,
   };
 }
 
@@ -712,7 +712,14 @@ export function useResonanceState() {
           if (content.includes('"type"')) {
             const fromTool = extractResonanceStream(content);
             if (fromTool.scored || fromTool.clustered || fromTool.analysis) {
-              setStream((current) => mergeResonanceStream(current, fromTool));
+              setStream((current) => {
+                const merged = mergeResonanceStream(current, fromTool);
+                return {
+                  ...merged,
+                  fenceCount: current.fenceCount,
+                  parseErrors: current.parseErrors,
+                };
+              });
             }
           }
         }

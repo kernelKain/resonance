@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import type { ResonancePhase } from "@/lib/resonance-parse";
 import type { ProductIdentity } from "@/lib/product-identity";
 import { asProductUrl, brandNameFrom } from "@/lib/product-identity";
+import { isCsvUploadCandidate, validateCsvUploadText } from "@/lib/csv";
 import { copyCsvGeneratorPrompt } from "@/lib/csv-prompt";
 
 const MAX_CSV_BYTES = 5 * 1024 * 1024;
@@ -61,14 +62,13 @@ export function UploadCard({
   const [fileError, setFileError] = useState<string | null>(null);
   const [promptCopied, setPromptCopied] = useState(false);
 
-  function selectFile(candidate: File | null) {
+  async function selectFile(candidate: File | null) {
     if (!candidate) {
       setFile(null);
       setFileError(null);
       return;
     }
-    const nameOk = candidate.name.toLowerCase().endsWith(".csv");
-    if (!nameOk) {
+    if (!isCsvUploadCandidate(candidate)) {
       setFile(null);
       setFileError("Choose a CSV file.");
       return;
@@ -76,6 +76,12 @@ export function UploadCard({
     if (candidate.size > MAX_CSV_BYTES) {
       setFile(null);
       setFileError("CSV files must be 5 MB or smaller.");
+      return;
+    }
+    const parseError = validateCsvUploadText(await candidate.text());
+    if (parseError) {
+      setFile(null);
+      setFileError(parseError);
       return;
     }
     setFileError(null);
@@ -130,7 +136,7 @@ export function UploadCard({
             event.preventDefault();
             setDragOver(false);
             const dropped = event.dataTransfer.files[0];
-            selectFile(dropped ?? null);
+            void selectFile(dropped ?? null);
           }}
           animate={dragOver ? { scale: 1.02 } : { scale: 1 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -159,7 +165,9 @@ export function UploadCard({
             type="file"
             accept=".csv,text/csv"
             aria-describedby="csv-requirements"
-            onChange={(event) => selectFile(event.target.files?.[0] ?? null)}
+            onChange={(event) => {
+              void selectFile(event.target.files?.[0] ?? null);
+            }}
           />
           <span className="mx-auto mt-5 inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm">
             {file ? "Choose a different CSV" : "Choose CSV file"}

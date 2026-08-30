@@ -93,8 +93,12 @@ export async function POST(request: Request) {
       const sentenceCount = (reviewText.match(/[.!?]/g) ?? []).length;
       return sentenceCount <= 4;
     };
-    const short = validRows.filter(isShort);
-    const rest = validRows.filter((row) => !isShort(row));
+    const short: Record<string, string>[] = [];
+    const rest: Record<string, string>[] = [];
+    for (const row of validRows) {
+      if (isShort(row)) short.push(row);
+      else rest.push(row);
+    }
     const rowsToWrite = [...short, ...rest].slice(0, 100);
     const csvToWrite = serialiseCsv(parsed.headers, rowsToWrite);
 
