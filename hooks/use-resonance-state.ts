@@ -42,6 +42,17 @@ export type TranscriptItem = {
 
 const HITL_PAUSE_MARKER = "<!-- HITL_PAUSE -->";
 
+export function cleanProductName(input: string): string {
+  try {
+    const isUrl = input.includes("://") || /^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(input.trim());
+    if (isUrl) {
+      const url = new URL(input.trim().includes("://") ? input.trim() : `https://${input.trim()}`);
+      if (url.hostname) return url.hostname.replace(/^www\./i, "");
+    }
+  } catch {}
+  return input.trim();
+}
+
 /**
  * Builds the excavation prompt sent to TrueForge.
  * Encodes all necessary parameters (product, file path, row count) inline so
@@ -211,7 +222,7 @@ export function useResonanceState() {
     setAssistant(assistantRef.current);
     setStream(extractResonanceStream(assistantRef.current));
     // Persist after every flush so a refresh restores the latest state
-    saveSession(productName, phase, assistantRef.current, uploadMeta);
+    saveSession(cleanProductName(productName), phase, assistantRef.current, uploadMeta);
   }
 
   function resetStream() {
@@ -405,7 +416,7 @@ export function useResonanceState() {
 
     setPendingQuestion(null);
     setPhase("done");
-    saveSession(productName, "done", assistantRef.current, uploadMeta);
+    saveSession(cleanProductName(productName), "done", assistantRef.current, uploadMeta);
   }
 
   async function runExcavation() {
@@ -438,7 +449,9 @@ export function useResonanceState() {
       const nextSessionId = await openSession();
       const basename =
         uploadJson.filename ?? uploadJson.filePath.split("/").pop() ?? file.name;
-      const message = excavationPrompt(productName.trim(), basename, uploadJson.rowCount ?? 0);
+      const cleanName = cleanProductName(productName);
+      setProductName(cleanName);
+      const message = excavationPrompt(cleanName, basename, uploadJson.rowCount ?? 0);
 
       setTranscript([
         {
@@ -461,11 +474,12 @@ export function useResonanceState() {
     setError(null);
     resetStream();
     setUploadMeta({ filePath: "HITL_SMOKE", rowCount: 0 });
-    setProductName("Linear");
+    const cleanName = cleanProductName(productName);
+    setProductName(cleanName);
 
     try {
       const nextSessionId = await openSession();
-      const message = "HITL_SMOKE. Pause for approval. Do not read a CSV.";
+      const message = `HITL_SMOKE for ${cleanName}. Pause for approval. Do not read a CSV.`;
       setTranscript([
         {
           id: crypto.randomUUID(),
