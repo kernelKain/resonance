@@ -1,17 +1,16 @@
+import type { NextRequest } from "next/server";
+
 type Bucket = { count: number; resetAt: number };
 
 declare global {
   var resonanceRateLimits: Map<string, Bucket> | undefined;
+  var resonanceRateLimitLastSweep: number | undefined;
 }
 
 const buckets = globalThis.resonanceRateLimits ??= new Map<string, Bucket>();
 
 export function clientAddress(request: Request): string {
-  return (
-    request.headers.get("x-real-ip") ||
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    "local"
-  );
+  return (request as NextRequest).ip ?? "local";
 }
 
 export function takeRateLimit(
@@ -20,6 +19,19 @@ export function takeRateLimit(
   windowMs: number,
   now = Date.now(),
 ): { allowed: boolean; retryAfterSeconds: number } {
+  globalThis.resonanceRateLimitLastSweep ??= now;
+  if (now - globalThis.resonanceRateLimitLastSweep > 60_000 || buckets.size > 10_000) {
+    for (const [k, v] of buckets.entries()) {
+      if (v.resetAt <= now) {
+        buckets.delete(k);
+      }
+    }
+    while (buckets.size > 10_000) {
+      buckets.delete(buckets.keys().next().value!);
+    }
+    globalThis.resonanceRateLimitLastSweep = now;
+  }
+
   const current = buckets.get(key);
   if (!current || current.resetAt <= now) {
     buckets.set(key, { count: 1, resetAt: now + windowMs });
