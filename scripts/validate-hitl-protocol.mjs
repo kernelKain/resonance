@@ -33,7 +33,7 @@ if (typeof instructions !== "string" || !instructions.trim()) {
 }
 
 const mustContain = [
-  "DAY 5 PROTOCOL",
+  "ANALYSIS PROTOCOL",
   "ask_user_question",
   "approval_request",
   "action_items",

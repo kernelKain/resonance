@@ -61,7 +61,7 @@ if (alerts.some((alert) => alert.type === "none")) {
   fail("aligned reviews must not appear in dissonance alerts");
 }
 if (asks.some((ask) => ask.action_items !== null)) {
-  fail("Hidden Asks must keep action_items null until Day 5");
+  fail("Hidden Asks must keep action_items null until approval");
 }
 
 console.log("PASS");

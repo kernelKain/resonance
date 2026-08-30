@@ -27,7 +27,7 @@ const AGENT_NAME = process.env.TRUEFORGE_AGENT_NAME ?? "resonance";
 const OUTPUT_PATH = path.join(ROOT, "analysis", "pipeline_last_run.txt");
 const RAW_STREAM_PATH = path.join(ROOT, "analysis", "pipeline_last_run.sse.txt");
 
-const MESSAGE = `Follow the Day 3 protocol for product Linear.
+const MESSAGE = `Follow the clustering protocol for product Linear.
 
 CSV file: scoring_fixture.csv
 Also valid path: demo_data/scoring_fixture.csv

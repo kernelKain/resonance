@@ -575,7 +575,7 @@ export function useResonanceState() {
     const { runId } = beginWork();
     setError(null);
     resetStream();
-    setUploadMeta({ filePath: "public/demo/day5_stream_fixture.txt", rowCount: 3 });
+    setUploadMeta({ filePath: "public/demo/hitl_stream_fixture.txt", rowCount: 3 });
     setPhase("running");
     setTranscript([
       {
@@ -586,9 +586,9 @@ export function useResonanceState() {
     ]);
 
     try {
-      const response = await fetch("/demo/day5_stream_fixture.txt", { cache: "no-store" });
+      const response = await fetch("/demo/hitl_stream_fixture.txt", { cache: "no-store" });
       assertCurrentRun(runId);
-      if (!response.ok) throw new Error("Could not load day5_stream_fixture.txt");
+      if (!response.ok) throw new Error("Could not load hitl_stream_fixture.txt");
       const text = await response.text();
       assertCurrentRun(runId);
       const markerAt = text.indexOf(HITL_PAUSE_MARKER);

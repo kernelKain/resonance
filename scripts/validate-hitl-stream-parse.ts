@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { extractResonanceStream, statusTextFromStream } from "../lib/resonance-parse";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const FIXTURE = path.join(ROOT, "public/demo/day5_stream_fixture.txt");
+const FIXTURE = path.join(ROOT, "public/demo/hitl_stream_fixture.txt");
 const MARKER = "<!-- HITL_PAUSE -->";
 
 function fail(message: string): never {
@@ -14,7 +14,7 @@ function fail(message: string): never {
 }
 
 const raw = fs.readFileSync(FIXTURE, "utf8");
-if (!raw.includes(MARKER)) fail("day5 fixture missing <!-- HITL_PAUSE -->");
+if (!raw.includes(MARKER)) fail("HITL fixture missing <!-- HITL_PAUSE -->");
 
 const [before, after] = raw.split(MARKER);
 if (!before?.trim() || !after?.trim()) fail("fixture did not split into two parts");

@@ -24,9 +24,9 @@ loadEnvFiles();
 
 const TRUEFORGE = process.env.TRUEFORGE_BASE_URL ?? "http://127.0.0.1:8790";
 const AGENT_NAME = process.env.TRUEFORGE_AGENT_NAME ?? "resonance";
-const OUT = path.join(ROOT, "analysis", "day2_last_run.txt");
+const OUT = path.join(ROOT, "analysis", "scoring_last_run.txt");
 
-const MESSAGE = `Score the reviews in day2_scoring_fixture.csv for the product Linear. Follow the Day 2 protocol. Read the CSV with the filesystem MCP. Research Linear with a subagent. Score every row. Emit exactly one resonance-data block of type scored_reviews.`;
+const MESSAGE = `Score the reviews in scoring_fixture.csv for the product Linear. Follow the scoring protocol. Read the CSV with the filesystem MCP. Research Linear with a subagent. Score every row. Emit exactly one resonance-data block of type scored_reviews.`;
 
 async function tf(pathname, init = {}) {
   const response = await fetch(`${TRUEFORGE}${pathname}`, {

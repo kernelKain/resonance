@@ -10,7 +10,7 @@ import { extractResonanceStream } from "../lib/resonance-parse";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function main() {
-  const fixture = fs.readFileSync(path.join(root, "public/demo/day5_stream_fixture.txt"), "utf8");
+  const fixture = fs.readFileSync(path.join(root, "public/demo/hitl_stream_fixture.txt"), "utf8");
   const stream = extractResonanceStream(fixture.replace("<!-- HITL_PAUSE -->", ""));
   const output = await renderToBuffer(
     <ResonanceDocument

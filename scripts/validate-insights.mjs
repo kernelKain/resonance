@@ -68,7 +68,7 @@ if (fences.length < 3) {
 
 const parsed = fences.map((text, index) => parseBlock(text, `fence[${index}]`));
 if (parsed.some((item) => item.type === "approval_request" || item.type === "action_items")) {
-  fail("found approval_request or action_items — that is Day 5, not Step 4");
+  fail("found approval_request or action_items — those belong after the approval gate, not in this step");
 }
 
 const scored = parsed.find((item) => item.type === "scored_reviews");
