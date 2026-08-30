@@ -246,7 +246,7 @@ function RadarGraphic({ stream }: { stream: ResonanceStreamState }) {
 
 function ProductLogo({ product }: { product: ProductIdentity }) {
   if (product.logoUrl) {
-    return <Image src={product.logoUrl} style={styles.logo} />;
+    return <Image src={product.logoUrl} style={styles.logo} alt="" />;
   }
   return (
     <View style={styles.logoFallback}>

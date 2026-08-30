@@ -12,7 +12,6 @@ type CircuitState = {
 };
 
 declare global {
-  // eslint-disable-next-line no-var
   var resonanceModelCircuit: CircuitState | undefined;
 }
 
